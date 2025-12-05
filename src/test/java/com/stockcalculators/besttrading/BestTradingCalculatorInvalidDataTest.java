@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Unit tests that verify how {@link BestTradingCalculator} behaves when the input data is logically
@@ -18,174 +21,55 @@ class BestTradingCalculatorInvalidDataTest {
 
   private final BestTradingCalculator calculator = new BestTradingCalculator();
 
-  /**
-   * When lowTimes has fewer elements than lowPrices, the calculator must fail fast with an
-   * IllegalArgumentException.
-   */
-  @Test
-  void differentListSizes_lowTimesShorter_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0, 11.0);
-    List<String> lowTimes = List.of("10:00"); // size 1 instead of 2
-    List<Double> highPrices = List.of(12.0, 13.0);
-    List<String> highTimes = List.of("15:00", "15:10");
+  @ParameterizedTest
+  @MethodSource("invalidDataProvider")
+  void shouldThrowExceptionForInvalidData(
+      List<Double> lowPrices,
+      List<String> lowTimes,
+      List<Double> highPrices,
+      List<String> highTimes,
+      Class<? extends RuntimeException> expectedException) {
     LocalDate calculationDate = LocalDate.of(2025, 11, 10);
 
     assertThrows(
-        IllegalArgumentException.class,
+        expectedException,
         () ->
             calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate));
   }
 
-  /**
-   * When highPrices has fewer elements than lowPrices, the calculator must fail fast with an
-   * IllegalArgumentException.
-   */
-  @Test
-  void differentListSizes_highPricesShorter_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0, 11.0);
-    List<String> lowTimes = List.of("10:00", "10:05");
-    List<Double> highPrices = List.of(12.0); // size 1 instead of 2
-    List<String> highTimes = List.of("15:00", "15:10");
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
-  }
-
-  /**
-   * When highTimes has fewer elements than lowPrices, the calculator must fail fast with an
-   * IllegalArgumentException.
-   */
-  @Test
-  void differentListSizes_highTimesShorter_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0, 11.0);
-    List<String> lowTimes = List.of("10:00", "10:05");
-    List<Double> highPrices = List.of(12.0, 13.0);
-    List<String> highTimes = List.of("15:00"); // size 1 instead of 2
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
-  }
-
-  /**
-   * Time values must match the HH:mm pattern. A value such as "9:30" (missing leading zero) is
-   * considered invalid and must cause an IllegalArgumentException.
-   */
-  @Test
-  void invalidTimeFormat_missingLeadingZero_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0);
-    List<String> lowTimes = List.of("9:30"); // not HH:mm
-    List<Double> highPrices = List.of(12.0);
-    List<String> highTimes = List.of("15:00");
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
-  }
-
-  /**
-   * Time values must represent a real time of day. A value such as "25:00" is impossible and must
-   * cause an IllegalArgumentException.
-   */
-  @Test
-  void impossibleTimeValue_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0);
-    List<String> lowTimes = List.of("25:00"); // impossible hour
-    List<Double> highPrices = List.of(12.0);
-    List<String> highTimes = List.of("15:00");
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
-  }
-
-  /**
-   * Arbitrary non-time strings such as "aa:bb" must also be rejected and lead to an
-   * IllegalArgumentException.
-   */
-  @Test
-  void nonParsableTimeString_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0);
-    List<String> lowTimes = List.of("aa:bb"); // not a time at all
-    List<Double> highPrices = List.of(12.0);
-    List<String> highTimes = List.of("15:00");
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
-  }
-
-  /**
-   * An empty string is not a valid time representation and must cause an IllegalArgumentException.
-   */
-  @Test
-  void emptyTimeString_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0);
-    List<String> lowTimes = List.of(""); // empty string is not a valid time
-    List<Double> highPrices = List.of(12.0);
-    List<String> highTimes = List.of("15:00");
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
-  }
-
-  /**
-   * A blank string (only whitespace) is also invalid and must cause an IllegalArgumentException.
-   */
-  @Test
-  void blankTimeString_shouldThrowIllegalArgumentException() {
-    List<Double> lowPrices = List.of(10.0);
-    List<String> lowTimes = List.of("   "); // blanks only
-    List<Double> highPrices = List.of(12.0);
-    List<String> highTimes = List.of("15:00");
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
-  }
-
-  /**
-   * A null element inside the time lists is logically invalid input data. Depending on the
-   * implementation of parseTime this may result in either an IllegalArgumentException or a
-   * NullPointerException, so we assert that some RuntimeException is thrown.
-   */
-  @Test
-  void nullElementInsideTimeList_shouldThrowRuntimeException() {
-    List<Double> lowPrices = List.of(10.0);
-    // Arrays.asList allows null elements, unlike List.of
-    List<String> lowTimes = Arrays.asList((String) null);
-    List<Double> highPrices = List.of(12.0);
-    List<String> highTimes = List.of("15:00");
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
-
-    assertThrows(
-        RuntimeException.class,
-        () ->
-            calculator.calculateBestTradingResult(
-                lowPrices, lowTimes, highPrices, highTimes, calculationDate));
+  static Stream<Arguments> invalidDataProvider() {
+    return Stream.of(
+        // List size mismatches
+        Arguments.of(
+            List.of(10.0, 11.0), List.of("10:00"), List.of(12.0, 13.0), List.of("15:00", "15:10"),
+            IllegalArgumentException.class),
+        Arguments.of(
+            List.of(10.0, 11.0), List.of("10:00", "10:05"), List.of(12.0), List.of("15:00", "15:10"),
+            IllegalArgumentException.class),
+        Arguments.of(
+            List.of(10.0, 11.0), List.of("10:00", "10:05"), List.of(12.0, 13.0), List.of("15:00"),
+            IllegalArgumentException.class),
+        // Invalid time formats
+        Arguments.of(
+            List.of(10.0), List.of("9:30"), List.of(12.0), List.of("15:00"),
+            IllegalArgumentException.class),
+        Arguments.of(
+            List.of(10.0), List.of("25:00"), List.of(12.0), List.of("15:00"),
+            IllegalArgumentException.class),
+        Arguments.of(
+            List.of(10.0), List.of("aa:bb"), List.of(12.0), List.of("15:00"),
+            IllegalArgumentException.class),
+        Arguments.of(
+            List.of(10.0), List.of(""), List.of(12.0), List.of("15:00"),
+            IllegalArgumentException.class),
+        Arguments.of(
+            List.of(10.0), List.of("   "), List.of(12.0), List.of("15:00"),
+            IllegalArgumentException.class),
+        // Null element in time list
+        Arguments.of(
+            List.of(10.0), Arrays.asList((String) null), List.of(12.0), List.of("15:00"),
+            RuntimeException.class)
+    );
   }
 }
