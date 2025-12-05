@@ -1,4 +1,3 @@
-
 # Stock Calculators – Best Single Buy/Sell Trade
 
 This small Java project provides a utility to compute the **best single buy/sell transaction**
@@ -23,8 +22,9 @@ Constraints:
 - `0 <= lowPrices[i] <= highPrices[i]`.
 - All timestamps belong to that specific calendar day.
 - You may trade:
-  - **Same day**: buy at the low and sell at the high **only if** `lowTime < highTime`.
-  - **Different days**: buy on day `i` and sell on day `j` where `j > i` (no time restrictions).
+    - **Same day**: buy at the low and sell at the high **only if** `lowTime < highTime`.
+    - **Different days**: buy on day `i` and sell on a strictly later trading day `j` (with `j > i`),
+      so the sell happens later in the overall timeline by calendar date.
 
 The goal is to find:
 
@@ -35,9 +35,20 @@ If no strictly positive profit is possible, we return a special **no-trade** res
 
 ---
 
+## Packages Overview
+
+- `com.stockcalculators.besttrading`
+    - `BestTradingCalculator` – public façade, instance-based API.
+    - `BestTradingResult` – immutable record with the result.
+    - `BestTraidingUtils` – internal helper with the core algorithm (package-private).
+- `com.stockcalculator.util`
+    - `DateTimeutils` – common date/time utilities shared by the trading components.
+
+---
+
 ## Calendar Semantics
 
-The main calculation method accepts a **calculation date**, not the date of the last trading day:
+The main calculation method is an **instance method**:
 
 ```java
 BestTradingResult BestTradingCalculator.calculateBestTradingResult(
@@ -54,74 +65,84 @@ Semantics:
 - `calculationDate` is the **logical "today"**.
 - The **last element** in the input lists (`index = N-1`) corresponds to the  
   **last trading day strictly before `calculationDate`**.
-- Trading days are Monday–Friday only; Saturdays and Sundays are skipped.
+- Trading days are Monday–Friday only; Saturdays and Sundays are skipped.  
+  The current (calculation) day is never part of the input series.
 
 Examples:
 
-- If `calculationDate` is **Monday**, the last trading day is the previous **Friday**.
-- If `calculationDate` is **Sunday**, the last trading day is still the previous **Friday**.
-- If `calculationDate` is **Tuesday**, the last trading day is the previous **Monday**.
+- If `calculationDate` is a weekday **other than Monday** (e.g. Tuesday, Wednesday, Thursday, Friday),
+  the last trading day is simply the previous calendar day (which is also a weekday).
+- If `calculationDate` is **Monday**, the last trading day is the previous **Friday**  
+  (the weekend is skipped).
+- If `calculationDate` falls on a **weekend** (Saturday or Sunday), the last trading day
+  is also the previous **Friday**.
+- In all cases, the array contains the last `N` trading days **ending at that last trading day**,
+  walking backwards and skipping Saturdays and Sundays.
 
-Internally the class:
+Internally the code:
 
-1. Locates the last trading date before `calculationDate`.
-2. Walks backwards in the calendar to build an array of dates for all `N` trading days,
-   skipping Saturdays and Sundays.
-3. Combines each date with the corresponding `lowTimes[i]` and `highTimes[i]` to produce
-   precise `Instant` values in UTC.
+1. Uses `DateTimeutils.findLastTradingDateBefore(calculationDate)` to locate the last trading day.
+2. Walks backwards in the calendar with `DateTimeutils.buildTradingDates` to build an array
+   of dates for all `N` trading days, skipping Saturdays and Sundays.
+3. Combines each date with the corresponding `lowTimes[i]` and `highTimes[i]` using
+   `DateTimeutils.toUtcZonedDateTime(...)` to produce precise `Instant` values in UTC.
 
 ---
 
 ## Public API
 
-### 1. `BestTradingCalculator`
+### 1. `BestTradingCalculator` (facade)
 
-Fully static utility class:
+Located in `com.stockcalculators.besttrading`:
 
 ```java
 public final class BestTradingCalculator {
 
-    public static BestTradingResult calculateBestTradingResult(
+    public BestTradingCalculator() {
+        // stateless
+    }
+
+    public BestTradingResult calculateBestTradingResult(
             List<Double> lowPrices,
             List<String> lowTimes,
             List<Double> highPrices,
             List<String> highTimes,
             LocalDate calculationDate
     ) {
-        // ...
+        // delegates to BestTraidingUtils
     }
 }
 ```
 
-Validation rules:
+Validation rules (enforced by the internal helper):
 
 - All list arguments must be non-null.
 - All lists must have the same size.
 - Time strings must match `HH:mm` format (e.g. `09:30`, `15:45`).
 - If the list size is `0`, the method returns a **no-trade** result without error.
 
-Algorithm:
+Algorithm (implemented in `BestTraidingUtils`):
 
 1. **Cross-day trades (buyDay < sellDay)**  
    Uses the classic “minimum so far” technique:
-   - Tracks the lowest `lowPrice` seen so far and its index.
-   - For each day `sellDay` computes `highPrices[sellDay] - minLowPrice`.
-   - Updates the best profit and trade tuple when a higher profit is found.
+    - Tracks the lowest `lowPrice` seen so far and its index.
+    - For each day `sellDay` computes `highPrices[sellDay] - minLowPrice`.
+    - Updates the best profit and trade tuple when a higher profit is found.
 
 2. **Same-day trades (buyDay == sellDay)**  
    For each day:
-   - Parses `lowTime` and `highTime`.
-   - If `lowTime.isBefore(highTime)`:
-     - Computes `highPrice - lowPrice`.
-     - Compares with the current best profit and updates if better.
-   - If `highTime` is earlier or equal to `lowTime`, the same-day trade is **invalid** and ignored.
+    - Parses `lowTime` and `highTime` via `DateTimeutils.parseTime`.
+    - If `lowTime.isBefore(highTime)`:
+        - Computes `highPrice - lowPrice`.
+        - Compares with the current best profit and updates if better.
+    - If `highTime` is earlier or equal to `lowTime`, the same-day trade is **invalid** and ignored.
 
 3. If, after all checks, there is **no strictly positive profit**, the method returns:
-   - `maxProfit = 0`
-   - `buyDay = -1`, `sellDay = -1`
-   - `buyPrice = 0`, `sellPrice = 0`
-   - `buyTime = null`, `sellTime = null`
-   - `calculationDate` is still set to the original value for traceability.
+    - `maxProfit = 0`
+    - `buyDay = -1`, `sellDay = -1`
+    - `buyPrice = 0`, `sellPrice = 0`
+    - `buyTime = null`, `sellTime = null`
+    - `calculationDate` is still set to the original value for traceability.
 
 ---
 
@@ -176,15 +197,23 @@ buyPrice = 0, sellPrice = 0
 calculationDate = 2025-11-10
 ```
 
-Day labels such as `Monday`, `Friday next week`, `Thursday (week +2)` are derived from
-the numeric `buyDay`/`sellDay` indices using a simple modulo + division scheme:
+Formatting is delegated to `DateTimeutils`:
 
-- Index `0` – Monday
-- Index `1` – Tuesday
-- ...
-- Index `4` – Friday
-- Index `5` – Monday next week
-- etc.
+- `formatInstant(Instant)` to format timestamps.
+- `formatDayLabel(int)` to produce labels like `Monday`, `Friday next week`, etc.
+
+---
+
+### 3. `DateTimeutils` (utilities)
+
+Located in `com.stockcalculator.util` and marked as a Lombok `@UtilityClass`:
+
+- `parseTime(String, String, int)` – parses `HH:mm`, throws `IllegalArgumentException` on error.
+- `findLastTradingDateBefore(LocalDate)` – finds the last Monday–Friday date before a given date.
+- `buildTradingDates(LocalDate, int)` – builds an array of trading dates for the given series length.
+- `formatInstant(Instant)` – renders an `Instant` in `yyyy-MM-dd'T'HH:mm` using UTC.
+- `formatDayLabel(int)` – creates human readable day labels based on 0-based index.
+- `toUtcZonedDateTime(LocalDate, LocalTime)` – produces a UTC `ZonedDateTime`.
 
 ---
 
@@ -193,8 +222,8 @@ the numeric `buyDay`/`sellDay` indices using a simple modulo + division scheme:
 Minimal snippet (for illustration only):
 
 ```java
-import com.stockcalculators.BestTradingCalculator;
-import com.stockcalculators.BestTradingResult;
+import com.stockcalculators.besttrading.BestTradingCalculator;
+import com.stockcalculators.besttrading.BestTradingResult;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -213,7 +242,8 @@ public class Demo {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10); // Monday
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         System.out.println(result.toPrettyString());
@@ -227,7 +257,7 @@ public class Demo {
 
 The project uses **JUnit 5**.
 
-There are two test classes:
+There are two test classes in `com.stockcalculators.besttrading`:
 
 - `BestTradingCalculatorPositiveTest` – typical and edge-case **valid** inputs where a result
   should be successfully computed (including no-trade scenarios).
@@ -246,7 +276,7 @@ Additional positive tests demonstrate how `calculationDate` affects the mapping:
 
 ## Building and Running
 
-This is a Gradle project using Java 17 toolchain.
+This is a Gradle project using Java 17 toolchain and Lombok.
 
 To run the tests:
 

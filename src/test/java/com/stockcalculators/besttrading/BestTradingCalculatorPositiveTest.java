@@ -1,4 +1,4 @@
-package com.stockcalculators;
+package com.stockcalculators.besttrading;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,8 @@ public class BestTradingCalculatorPositiveTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10); // Monday after last Friday (2025-11-07)
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(17, result.maxProfit());
@@ -67,7 +68,8 @@ public class BestTradingCalculatorPositiveTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 9); // Sunday, last trading day is still 2025-11-07 (Friday)
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(17, result.maxProfit());
@@ -100,7 +102,8 @@ public class BestTradingCalculatorPositiveTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 11); // Tuesday
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(17, result.maxProfit());
@@ -138,7 +141,8 @@ public class BestTradingCalculatorPositiveTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10); // Monday after the last Friday (2025-11-07)
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(33, result.maxProfit());
@@ -172,7 +176,8 @@ public class BestTradingCalculatorPositiveTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10); // Monday after the last Friday (2025-11-07)
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(58, result.maxProfit());
@@ -204,7 +209,8 @@ public class BestTradingCalculatorPositiveTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10); // Monday after the last Friday (2025-11-07)
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(21, result.maxProfit());
@@ -237,7 +243,8 @@ public class BestTradingCalculatorPositiveTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10); // Monday
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(0, result.maxProfit());

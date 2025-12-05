@@ -16,7 +16,14 @@ java {
 }
 
 dependencies {
+    // <p>JUnit 5 for unit tests.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+
+    // <p>Lombok for utility classes and other boilerplate reduction.
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+    testCompileOnly 'org.projectlombok:lombok:1.18.34'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
 }
 
 test {

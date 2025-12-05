@@ -1,4 +1,4 @@
-package com.stockcalculators;
+package com.stockcalculators.besttrading;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +29,8 @@ public class BestTradingCalculatorNegativeTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10);
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(0, result.maxProfit());
@@ -57,7 +58,8 @@ public class BestTradingCalculatorNegativeTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 6);
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(0, result.maxProfit());
@@ -84,7 +86,8 @@ public class BestTradingCalculatorNegativeTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 6);
 
-        BestTradingResult result = BestTradingCalculator.calculateBestTradingResult(
+        BestTradingCalculator calculator = new BestTradingCalculator();
+        BestTradingResult result = calculator.calculateBestTradingResult(
                 lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
         assertEquals(0, result.maxProfit());
@@ -111,8 +114,9 @@ public class BestTradingCalculatorNegativeTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10);
 
+        BestTradingCalculator calculator = new BestTradingCalculator();
         assertThrows(IllegalArgumentException.class, () ->
-                BestTradingCalculator.calculateBestTradingResult(
+                calculator.calculateBestTradingResult(
                         lowPrices, lowTimes, highPrices, highTimes, calculationDate));
     }
 
@@ -130,8 +134,9 @@ public class BestTradingCalculatorNegativeTest {
 
         LocalDate calculationDate = LocalDate.of(2025, 11, 10);
 
+        BestTradingCalculator calculator = new BestTradingCalculator();
         assertThrows(IllegalArgumentException.class, () ->
-                BestTradingCalculator.calculateBestTradingResult(
+                calculator.calculateBestTradingResult(
                         lowPrices, lowTimes, highPrices, highTimes, calculationDate));
     }
 }
