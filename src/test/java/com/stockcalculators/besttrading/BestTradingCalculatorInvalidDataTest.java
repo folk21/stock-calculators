@@ -42,34 +42,60 @@ class BestTradingCalculatorInvalidDataTest {
     return Stream.of(
         // List size mismatches
         Arguments.of(
-            List.of(10.0, 11.0), List.of("10:00"), List.of(12.0, 13.0), List.of("15:00", "15:10"),
+            List.of(10.0, 11.0),
+            List.of("10:00"),
+            List.of(12.0, 13.0),
+            List.of("15:00", "15:10"),
             IllegalArgumentException.class),
         Arguments.of(
-            List.of(10.0, 11.0), List.of("10:00", "10:05"), List.of(12.0), List.of("15:00", "15:10"),
+            List.of(10.0, 11.0),
+            List.of("10:00", "10:05"),
+            List.of(12.0),
+            List.of("15:00", "15:10"),
             IllegalArgumentException.class),
         Arguments.of(
-            List.of(10.0, 11.0), List.of("10:00", "10:05"), List.of(12.0, 13.0), List.of("15:00"),
+            List.of(10.0, 11.0),
+            List.of("10:00", "10:05"),
+            List.of(12.0, 13.0),
+            List.of("15:00"),
             IllegalArgumentException.class),
         // Invalid time formats
         Arguments.of(
-            List.of(10.0), List.of("9:30"), List.of(12.0), List.of("15:00"),
+            List.of(10.0),
+            List.of("9:30"),
+            List.of(12.0),
+            List.of("15:00"),
             IllegalArgumentException.class),
         Arguments.of(
-            List.of(10.0), List.of("25:00"), List.of(12.0), List.of("15:00"),
+            List.of(10.0),
+            List.of("25:00"),
+            List.of(12.0),
+            List.of("15:00"),
             IllegalArgumentException.class),
         Arguments.of(
-            List.of(10.0), List.of("aa:bb"), List.of(12.0), List.of("15:00"),
+            List.of(10.0),
+            List.of("aa:bb"),
+            List.of(12.0),
+            List.of("15:00"),
             IllegalArgumentException.class),
         Arguments.of(
-            List.of(10.0), List.of(""), List.of(12.0), List.of("15:00"),
+            List.of(10.0),
+            List.of(""),
+            List.of(12.0),
+            List.of("15:00"),
             IllegalArgumentException.class),
         Arguments.of(
-            List.of(10.0), List.of("   "), List.of(12.0), List.of("15:00"),
+            List.of(10.0),
+            List.of("   "),
+            List.of(12.0),
+            List.of("15:00"),
             IllegalArgumentException.class),
         // Null element in time list
         Arguments.of(
-            List.of(10.0), Arrays.asList((String) null), List.of(12.0), List.of("15:00"),
-            RuntimeException.class)
-    );
+            List.of(10.0),
+            Arrays.asList((String) null),
+            List.of(12.0),
+            List.of("15:00"),
+            RuntimeException.class));
   }
 }
