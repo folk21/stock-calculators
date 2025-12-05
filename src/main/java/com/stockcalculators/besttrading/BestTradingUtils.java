@@ -54,7 +54,7 @@ class BestTradingUtils {
 
     BestTradeState bestTradeState = findBestCrossDayTrade(lowPrices, highPrices, timeSeriesData);
 
-    bestTradeState = updateWithSameDayTrades(bestTradeState, lowPrices, highPrices, timeSeriesData);
+    updateWithSameDayTrades(bestTradeState, lowPrices, highPrices, timeSeriesData);
 
     if (!bestTradeState.hasProfitableTrade()) {
       // We never found a strictly positive profit, so the "no trade" result is returned.
@@ -186,21 +186,13 @@ class BestTradingUtils {
    * if a better profit is found, respecting the rule that the low time must be strictly earlier
    * than the high time.
    */
-  private static BestTradeState updateWithSameDayTrades(
+  private static void updateWithSameDayTrades(
       BestTradeState currentBestTrade,
       List<Double> lowPrices,
       List<Double> highPrices,
       TimeSeriesData timeSeriesData) {
 
     int numberOfTradingDays = lowPrices.size();
-
-    double bestProfit = currentBestTrade.bestProfit;
-    int bestBuyDay = currentBestTrade.bestBuyDay;
-    int bestSellDay = currentBestTrade.bestSellDay;
-    double bestBuyPrice = currentBestTrade.bestBuyPrice;
-    double bestSellPrice = currentBestTrade.bestSellPrice;
-    Instant bestBuyTime = currentBestTrade.bestBuyTime;
-    Instant bestSellTime = currentBestTrade.bestSellTime;
 
     for (int tradingDayIndex = 0; tradingDayIndex < numberOfTradingDays; tradingDayIndex++) {
       LocalTime lowTime = timeSeriesData.lowLocalTimes[tradingDayIndex];
@@ -212,25 +204,17 @@ class BestTradingUtils {
       }
 
       double potentialProfit = highPrices.get(tradingDayIndex) - lowPrices.get(tradingDayIndex);
-      if (potentialProfit > bestProfit) {
-        bestProfit = potentialProfit;
-        bestBuyDay = tradingDayIndex;
-        bestSellDay = tradingDayIndex;
-        bestBuyPrice = lowPrices.get(tradingDayIndex);
-        bestSellPrice = highPrices.get(tradingDayIndex);
-        bestBuyTime = timeSeriesData.lowInstants[tradingDayIndex];
-        bestSellTime = timeSeriesData.highInstants[tradingDayIndex];
+      if (potentialProfit > currentBestTrade.bestProfit) {
+        currentBestTrade.updateTrade(
+            potentialProfit,
+            tradingDayIndex,
+            tradingDayIndex,
+            lowPrices.get(tradingDayIndex),
+            highPrices.get(tradingDayIndex),
+            timeSeriesData.lowInstants[tradingDayIndex],
+            timeSeriesData.highInstants[tradingDayIndex]);
       }
     }
-
-    return new BestTradeState(
-        bestProfit,
-        bestBuyDay,
-        bestSellDay,
-        bestBuyPrice,
-        bestSellPrice,
-        bestBuyTime,
-        bestSellTime);
   }
 
   /** Small immutable holder for all date/time related arrays in the time series. */
@@ -259,13 +243,13 @@ class BestTradingUtils {
   /** Internal state holder for the best trade found so far. */
   private static final class BestTradeState {
 
-    private final double bestProfit;
-    private final int bestBuyDay;
-    private final int bestSellDay;
-    private final double bestBuyPrice;
-    private final double bestSellPrice;
-    private final Instant bestBuyTime;
-    private final Instant bestSellTime;
+    private double bestProfit;
+    private int bestBuyDay;
+    private int bestSellDay;
+    private double bestBuyPrice;
+    private double bestSellPrice;
+    private Instant bestBuyTime;
+    private Instant bestSellTime;
 
     private BestTradeState(
         double bestProfit,
@@ -290,6 +274,23 @@ class BestTradingUtils {
 
     boolean hasProfitableTrade() {
       return bestBuyDay >= 0 && bestProfit > 0.0;
+    }
+
+    void updateTrade(
+        double profit,
+        int buyDay,
+        int sellDay,
+        double buyPrice,
+        double sellPrice,
+        Instant buyTime,
+        Instant sellTime) {
+      this.bestProfit = profit;
+      this.bestBuyDay = buyDay;
+      this.bestSellDay = sellDay;
+      this.bestBuyPrice = buyPrice;
+      this.bestSellPrice = sellPrice;
+      this.bestBuyTime = buyTime;
+      this.bestSellTime = sellTime;
     }
 
     BestTradingResult toResult(LocalDate calculationDate) {
