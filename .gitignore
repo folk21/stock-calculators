@@ -1,0 +1,17 @@
+*.DS_Store
+*.iml
+*.zip
+*.jar
+.idea
+.settings
+.project
+.classpath
+.vscode
+target
+bin
+out
+build
+.gradle
+.gradletasknamecache
+local.properties
+gradle/wrapper/gradle-wrapper.jar
