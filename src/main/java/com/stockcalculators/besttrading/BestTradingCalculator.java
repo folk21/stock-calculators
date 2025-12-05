@@ -1,5 +1,7 @@
 package com.stockcalculators.besttrading;
 
+import static com.stockcalculators.besttrading.BestTradingUtils.buildTimeSeriesData;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,12 +33,51 @@ public final class BestTradingCalculator {
    *     profit is possible
    */
   public BestTradingResult calculateBestTradingResult(
-      List<Double> lowPrices,
-      List<String> lowTimes,
-      List<Double> highPrices,
-      List<String> highTimes,
-      LocalDate calculationDate) {
-    return BestTradingUtils.calculateBestTradingResultInternal(
-        lowPrices, lowTimes, highPrices, highTimes, calculationDate);
+      final List<Double> lowPrices,
+      final List<String> lowTimes,
+      final List<Double> highPrices,
+      final List<String> highTimes,
+      final LocalDate calculationDate) {
+
+    // 1. Validate that all inputs are present and consistent.
+    BestTradingUtils.validateInputs(lowPrices, lowTimes, highPrices, highTimes, calculationDate);
+
+    // 2. Determine how many trading days of data we have.
+    int numberOfTradingDays = lowPrices.size();
+    if (numberOfTradingDays == 0) {
+      // 2.1.  No data at all means that no trade is possible.
+      return BestTradingResult.noTrade(calculationDate);
+    }
+
+    // 3. Build a time series that pairs each trading day with its corresponding
+    //  low/high times and resolves the actual calendar dates of those trading
+    //  days relative to the calculationDate.
+    BestTradingUtils.TimeSeriesData timeSeriesData =
+        buildTimeSeriesData(lowTimes, highTimes, calculationDate, numberOfTradingDays);
+
+    // 4. First pass: search for the best cross-day trade.
+    //    This step considers all trades where the buy happens on one trading day
+    //    and the sell happens on a strictly later trading day.
+    BestTradingUtils.BestTradeState bestTradeState =
+        BestTradingUtils.findBestCrossDayTrade(lowPrices, highPrices, timeSeriesData);
+
+    // 5. Second pass: update the best trade with same-day opportunities.
+    //    Here we check trades where the buy and sell both occur on the same day.
+    //    For example, buying at the intraday low and selling at the intraday high
+    //    of a single trading day.
+    BestTradingUtils.updateWithSameDayTrades(bestTradeState, lowPrices, highPrices, timeSeriesData);
+
+    // 6. If no positive profit was found
+    if (!bestTradeState.hasProfitableTrade()) {
+      // 6.1. After considering both cross-day and same-day trades, we still
+      //    haven't found a strictly positive profit.
+      return BestTradingResult.noTrade(calculationDate);
+    }
+
+    // 7. At this point, bestTradeState contains the optimal trade:
+    //    - best buy day/time
+    //    - best sell day/time
+    //    - maximum achievable profit
+    return bestTradeState.toResult(calculationDate);
   }
 }

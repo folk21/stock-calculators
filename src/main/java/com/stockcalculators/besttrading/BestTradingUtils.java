@@ -19,58 +19,13 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 class BestTradingUtils {
 
-  /**
-   * Computes the best possible single buy/sell transaction.
-   *
-   * <p>The data represents the last {@code N} trading days (Monday to Friday only) before the given
-   * calculation date.
-   *
-   * @param lowPrices intraday lowest prices, one per trading day
-   * @param lowTimes intraday times of the lows, formatted as {@code HH:mm}
-   * @param highPrices intraday highest prices, one per trading day
-   * @param highTimes intraday times of the highs, formatted as {@code HH:mm}
-   * @param calculationDate logical date of the calculation; the last input day corresponds to the
-   *     last trading day strictly before this date
-   * @return best trading result or {@link BestTradingResult#noTrade(LocalDate)} if no positive
-   *     profit is possible
-   */
-  static BestTradingResult calculateBestTradingResultInternal(
-      List<Double> lowPrices,
-      List<String> lowTimes,
-      List<Double> highPrices,
-      List<String> highTimes,
-      LocalDate calculationDate) {
-
-    validateInputs(lowPrices, lowTimes, highPrices, highTimes, calculationDate);
-
-    int numberOfTradingDays = lowPrices.size();
-    if (numberOfTradingDays == 0) {
-      // No data at all means that no trade is possible.
-      return BestTradingResult.noTrade(calculationDate);
-    }
-
-    TimeSeriesData timeSeriesData =
-        buildTimeSeriesData(lowTimes, highTimes, calculationDate, numberOfTradingDays);
-
-    BestTradeState bestTradeState = findBestCrossDayTrade(lowPrices, highPrices, timeSeriesData);
-
-    updateWithSameDayTrades(bestTradeState, lowPrices, highPrices, timeSeriesData);
-
-    if (!bestTradeState.hasProfitableTrade()) {
-      // We never found a strictly positive profit, so the "no trade" result is returned.
-      return BestTradingResult.noTrade(calculationDate);
-    }
-
-    return bestTradeState.toResult(calculationDate);
-  }
-
   /** Validates the basic preconditions for the calculation. */
-  private static void validateInputs(
-      List<Double> lowPrices,
-      List<String> lowTimes,
-      List<Double> highPrices,
-      List<String> highTimes,
-      LocalDate calculationDate) {
+  static void validateInputs(
+      final List<Double> lowPrices,
+      final List<String> lowTimes,
+      final List<Double> highPrices,
+      final List<String> highTimes,
+      final LocalDate calculationDate) {
 
     Objects.requireNonNull(lowPrices, "lowPrices must not be null");
     Objects.requireNonNull(lowTimes, "lowTimes must not be null");
@@ -87,11 +42,11 @@ class BestTradingUtils {
   }
 
   /** Prepares arrays of dates, parsed times and instants for each trading day. */
-  private static TimeSeriesData buildTimeSeriesData(
-      List<String> lowTimes,
-      List<String> highTimes,
-      LocalDate calculationDate,
-      int numberOfTradingDays) {
+  static TimeSeriesData buildTimeSeriesData(
+      final List<String> lowTimes,
+      final List<String> highTimes,
+      final LocalDate calculationDate,
+      final int numberOfTradingDays) {
 
     LocalDate lastTradingDate = DateTimeUtils.findLastTradingDateBefore(calculationDate);
     LocalDate[] tradingDates =
@@ -128,8 +83,10 @@ class BestTradingUtils {
    * Finds the best cross-day trade (buy on one day, sell on a strictly later day) using the classic
    * "minimum so far" approach.
    */
-  private static BestTradeState findBestCrossDayTrade(
-      List<Double> lowPrices, List<Double> highPrices, TimeSeriesData timeSeriesData) {
+  static BestTradeState findBestCrossDayTrade(
+      final List<Double> lowPrices,
+      final List<Double> highPrices,
+      final TimeSeriesData timeSeriesData) {
 
     int numberOfTradingDays = lowPrices.size();
     if (numberOfTradingDays <= 1) {
@@ -186,11 +143,11 @@ class BestTradingUtils {
    * if a better profit is found, respecting the rule that the low time must be strictly earlier
    * than the high time.
    */
-  private static void updateWithSameDayTrades(
-      BestTradeState currentBestTrade,
-      List<Double> lowPrices,
-      List<Double> highPrices,
-      TimeSeriesData timeSeriesData) {
+  static void updateWithSameDayTrades(
+      final BestTradeState currentBestTrade,
+      final List<Double> lowPrices,
+      final List<Double> highPrices,
+      final TimeSeriesData timeSeriesData) {
 
     int numberOfTradingDays = lowPrices.size();
 
@@ -218,7 +175,7 @@ class BestTradingUtils {
   }
 
   /** Small immutable holder for all date/time related arrays in the time series. */
-  private static final class TimeSeriesData {
+  static final class TimeSeriesData {
 
     private final LocalDate[] tradingDates;
     private final LocalTime[] lowLocalTimes;
@@ -241,7 +198,7 @@ class BestTradingUtils {
   }
 
   /** Internal state holder for the best trade found so far. */
-  private static final class BestTradeState {
+  static final class BestTradeState {
 
     private double bestProfit;
     private int bestBuyDay;
