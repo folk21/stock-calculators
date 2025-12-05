@@ -21,10 +21,9 @@ Constraints:
 
 - `0 <= lowPrices[i] <= highPrices[i]`.
 - All timestamps belong to that specific calendar day.
-- You may trade:
-    - **Same day**: buy at the low and sell at the high **only if** `lowTime < highTime`.
-    - **Different days**: buy on day `i` and sell on a strictly later trading day `j` (with `j > i`),
-      so the sell happens later in the overall timeline by calendar date.
+- You can complete at most one transaction: buy once and sell once later.
+- If buying and selling happen on the **same trading day**, the buy time must be
+  strictly earlier than the sell time for that day (i.e. `lowTime < highTime`).
 
 The goal is to find:
 
