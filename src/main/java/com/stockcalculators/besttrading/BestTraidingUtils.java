@@ -1,6 +1,6 @@
 package com.stockcalculators.besttrading;
 
-import com.stockcalculator.util.DateTimeUtils;
+import com.stockcalculators.util.DateTimeUtils;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;

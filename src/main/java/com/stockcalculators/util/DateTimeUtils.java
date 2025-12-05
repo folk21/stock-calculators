@@ -1,4 +1,4 @@
-package com.stockcalculator.util;
+package com.stockcalculators.util;
 
 import lombok.experimental.UtilityClass;
 
