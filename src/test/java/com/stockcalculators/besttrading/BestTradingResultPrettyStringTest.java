@@ -7,13 +7,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
-/**
- * <p>Unit tests for {@link BestTradingResult#toPrettyString()}.
- */
+/** Unit tests for {@link BestTradingResult#toPrettyString()}. */
 class BestTradingResultPrettyStringTest {
 
   /**
-   * <p>When there is no profitable trade (maxProfit <= 0 or invalid day indices),
+   * When there is no profitable trade (maxProfit <= 0 or invalid day indices),
+   *
    * <p>the method must return a fixed multi-line message describing that situation.
    */
   @Test
@@ -35,11 +34,16 @@ class BestTradingResultPrettyStringTest {
   }
 
   /**
-   * <p>For a valid profitable trade, the method must produce a human readable multi-line
+   * For a valid profitable trade, the method must produce a human readable multi-line
+   *
    * <p>description that includes:
+   *
    * <p>- first line with day indices and integer prices,
+   *
    * <p>- second line with maxProfit,
+   *
    * <p>- third and fourth lines with day labels, prices and timestamps,
+   *
    * <p>- final line with the calculation date.
    */
   @Test
@@ -61,14 +65,7 @@ class BestTradingResultPrettyStringTest {
 
     BestTradingResult result =
         new BestTradingResult(
-            maxProfit,
-            buyDay,
-            sellDay,
-            buyPrice,
-            buyTime,
-            sellPrice,
-            sellTime,
-            calculationDate);
+            maxProfit, buyDay, sellDay, buyPrice, buyTime, sellPrice, sellTime, calculationDate);
 
     String pretty = result.toPrettyString();
 
@@ -88,7 +85,8 @@ class BestTradingResultPrettyStringTest {
     assertTrue(pretty.contains("Best buy is Day 0 at 10 → sell Day 9 at 27"));
     assertTrue(pretty.contains("maxProfit = 17"));
     assertTrue(pretty.contains("buyDay = 0 (Monday),  buyPrice = 10.00 at 2025-10-27T10:00"));
-    assertTrue(pretty.contains("sellDay = 9 (Friday next week), sellPrice = 27.00 at 2025-11-07T16:05"));
+    assertTrue(
+        pretty.contains("sellDay = 9 (Friday next week), sellPrice = 27.00 at 2025-11-07T16:05"));
     assertTrue(pretty.contains("calculationDate = 2025-11-10"));
   }
 }
