@@ -22,6 +22,9 @@ Constraints:
 - `0 <= lowPrices[i] <= highPrices[i]`.
 - All timestamps belong to that specific calendar day.
 - You can complete at most one transaction: buy once and sell once later.
+- Buying and selling may happen on **different trading days** as long as the sell day
+  is strictly later in the series (i.e. `sellDay > buyDay`), which matches the
+  “sell once later” requirement.
 - If buying and selling happen on the **same trading day**, the buy time must be
   strictly earlier than the sell time for that day (i.e. `lowTime < highTime`).
 
@@ -122,21 +125,43 @@ Validation rules (enforced by the internal helper):
 
 Algorithm (implemented in `BestTraidingUtils`):
 
+0. **Pre-processing**
+
+    - For each trading day the code:
+        - Parses `lowTime` and `highTime` using `DateTimeUtils.parseTime`.
+        - Combines each date with its times via `DateTimeUtils.toUtcZonedDateTime(...)`
+          to obtain `Instant` values for the low and the high.
+
 1. **Cross-day trades (buyDay < sellDay)**  
    Uses the classic “minimum so far” technique:
-    - Tracks the lowest `lowPrice` seen so far and its index.
-    - For each day `sellDay` computes `highPrices[sellDay] - minLowPrice`.
-    - Updates the best profit and trade tuple when a higher profit is found.
 
-2. **Same-day trades (buyDay == sellDay)**  
-   For each day:
-    - Parses `lowTime` and `highTime` via `DateTimeutils.parseTime`.
-    - If `lowTime.isBefore(highTime)`:
-        - Computes `highPrice - lowPrice`.
-        - Compares with the current best profit and updates if better.
-    - If `highTime` is earlier or equal to `lowTime`, the same-day trade is **invalid** and ignored.
+    - Tracks the lowest `lowPrice` seen so far and the day index where it occurred.
+    - For each potential selling day `sellDay` computes  
+      `potentialProfit = highPrices[sellDay] - minimumLowPriceSoFar`.
+    - If `potentialProfit` is greater than the current best profit, updates the
+      best trade:
+        - `buyDay` = day of the minimum low price so far,
+        - `sellDay` = current `sellDay`,
+        - buy/sell prices and timestamps are taken from the pre-computed series.
 
-3. If, after all checks, there is **no strictly positive profit**, the method returns:
+2. **Same-day trades (buyDay == sellDay)**
+
+   For each trading day:
+
+    - Takes the already parsed `lowTime` and `highTime`.
+    - If `lowTime.isBefore(highTime)` (i.e. the low happens strictly before the high):
+        - Computes `potentialProfit = highPrice - lowPrice` for that day.
+        - If this `potentialProfit` is greater than the current best profit
+          (possibly found during cross-day processing), updates the best trade so
+          that both `buyDay` and `sellDay` equal this day.
+    - If `highTime` is earlier than or equal to `lowTime`, the same-day trade is
+      **invalid** according to the problem statement and is ignored.
+
+3. **No profitable trade**
+
+   If, after processing cross-day and same-day trades, there is **no strictly
+   positive profit**, the method returns a special “no-trade” result:
+
     - `maxProfit = 0`
     - `buyDay = -1`, `sellDay = -1`
     - `buyPrice = 0`, `sellPrice = 0`
