@@ -23,12 +23,12 @@ class BestTradingResultPrettyStringTest {
 
     String pretty = result.toPrettyString();
 
-    String expected =
-        "No profitable trade was found.\n"
-            + "maxProfit = 0\n"
-            + "buyDay = -1, sellDay = -1\n"
-            + "buyPrice = 0, sellPrice = 0\n"
-            + "calculationDate = 2025-11-10";
+    String expected = """
+        No profitable trade was found.
+        maxProfit = 0
+        buyDay = -1, sellDay = -1
+        buyPrice = 0, sellPrice = 0
+        calculationDate = 2025-11-10""";
 
     assertEquals(expected, pretty);
   }
@@ -69,12 +69,12 @@ class BestTradingResultPrettyStringTest {
 
     String pretty = result.toPrettyString();
 
-    String expected =
-        "Best buy is Day 0 at 10 → sell Day 9 at 27\n"
-            + "maxProfit = 17\n"
-            + "buyDay = 0 (Monday),  buyPrice = 10.00 at 2025-10-27T10:00\n"
-            + "sellDay = 9 (Friday next week), sellPrice = 27.00 at 2025-11-07T16:05\n"
-            + "calculationDate = 2025-11-10";
+    String expected = """
+        Best buy is Day 0 at 10 → sell Day 9 at 27
+        maxProfit = 17
+        buyDay = 0 (Monday),  buyPrice = 10.00 at 2025-10-27T10:00
+        sellDay = 9 (Friday next week), sellPrice = 27.00 at 2025-11-07T16:05
+        calculationDate = 2025-11-10""";
 
     // Full equality check ensures that formatting (line breaks, spaces, day labels)
     // matches the expected pretty-print contract exactly.
