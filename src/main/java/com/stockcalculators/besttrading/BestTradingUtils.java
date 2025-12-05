@@ -17,7 +17,7 @@ import lombok.experimental.UtilityClass;
  * com.stockcalculators.besttrading} package.
  */
 @UtilityClass
-class BestTraidingUtils {
+class BestTradingUtils {
 
   /**
    * Computes the best possible single buy/sell transaction.

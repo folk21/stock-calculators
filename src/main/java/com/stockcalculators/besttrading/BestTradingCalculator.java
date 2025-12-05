@@ -7,8 +7,9 @@ import java.util.List;
  * Facade class that exposes the main API for calculating the best single buy/sell trade over a
  * series of trading days.
  *
- * <p>The heavy lifting is delegated to {@link BestTraidingUtils}, which keeps the public class
+ * <p>The heavy lifting is delegated to {@link BestTradingUtils}, which keeps the public class
  * short and focused on its primary responsibility.
+ *
  */
 public final class BestTradingCalculator {
 
@@ -33,7 +34,7 @@ public final class BestTradingCalculator {
       List<Double> highPrices,
       List<String> highTimes,
       LocalDate calculationDate) {
-    return BestTraidingUtils.calculateBestTradingResultInternal(
+    return BestTradingUtils.calculateBestTradingResultInternal(
         lowPrices, lowTimes, highPrices, highTimes, calculationDate);
   }
 }
