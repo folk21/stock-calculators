@@ -7,9 +7,11 @@ import java.util.List;
  * Facade class that exposes the main API for calculating the best single buy/sell trade over a
  * series of trading days.
  *
- * <p>The heavy lifting is delegated to {@link BestTradingUtils}, which keeps the public class
- * short and focused on its primary responsibility.
+ * <p>The heavy lifting is delegated to {@link BestTradingUtils}, which keeps the public class short
+ * and focused on its primary responsibility.
  *
+ * <p>The documentation please read in the README.md: <a
+ * href="https://github.com/folk21/stock-calculators">stock-calculators</a>
  */
 public final class BestTradingCalculator {
 
