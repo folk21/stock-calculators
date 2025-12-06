@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'checkstyle'
 }
 
 group = 'com.stockcalculators'
@@ -12,6 +13,20 @@ repositories {
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+checkstyle {
+    toolVersion = '10.18.1'
+    // Gradle will look for config/checkstyle/checkstyle.xml by default,
+    // so you don't strictly need configFile here.
+    // configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
+}
+
+tasks.withType(Checkstyle).configureEach {
+    reports {
+        xml.required = false
+        html.required = true
     }
 }
 
