@@ -27,9 +27,7 @@ public class BestTradingCalculatorPositiveTest {
   @ParameterizedTest
   @MethodSource("calculationDateScenarios")
   void shouldFindBestTradeForDifferentCalculationDates(
-      LocalDate calculationDate,
-      Instant expectedBuyTime,
-      Instant expectedSellTime) {
+      LocalDate calculationDate, Instant expectedBuyTime, Instant expectedSellTime) {
     List<Double> lowPrices = List.of(10.0, 12.0, 11.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0);
     List<String> lowTimes =
         List.of(
@@ -61,19 +59,24 @@ public class BestTradingCalculatorPositiveTest {
         // Monday calculation date
         Arguments.of(
             LocalDate.of(2025, 11, 10),
-            ZonedDateTime.of(LocalDate.of(2025, 10, 27), LocalTime.of(10, 0), ZoneOffset.UTC).toInstant(),
-            ZonedDateTime.of(LocalDate.of(2025, 11, 7), LocalTime.of(16, 5), ZoneOffset.UTC).toInstant()),
+            ZonedDateTime.of(LocalDate.of(2025, 10, 27), LocalTime.of(10, 0), ZoneOffset.UTC)
+                .toInstant(),
+            ZonedDateTime.of(LocalDate.of(2025, 11, 7), LocalTime.of(16, 5), ZoneOffset.UTC)
+                .toInstant()),
         // Sunday calculation date
         Arguments.of(
             LocalDate.of(2025, 11, 9),
-            ZonedDateTime.of(LocalDate.of(2025, 10, 27), LocalTime.of(10, 0), ZoneOffset.UTC).toInstant(),
-            ZonedDateTime.of(LocalDate.of(2025, 11, 7), LocalTime.of(16, 5), ZoneOffset.UTC).toInstant()),
+            ZonedDateTime.of(LocalDate.of(2025, 10, 27), LocalTime.of(10, 0), ZoneOffset.UTC)
+                .toInstant(),
+            ZonedDateTime.of(LocalDate.of(2025, 11, 7), LocalTime.of(16, 5), ZoneOffset.UTC)
+                .toInstant()),
         // Tuesday calculation date
         Arguments.of(
             LocalDate.of(2025, 11, 11),
-            ZonedDateTime.of(LocalDate.of(2025, 10, 28), LocalTime.of(10, 0), ZoneOffset.UTC).toInstant(),
-            ZonedDateTime.of(LocalDate.of(2025, 11, 10), LocalTime.of(16, 5), ZoneOffset.UTC).toInstant())
-    );
+            ZonedDateTime.of(LocalDate.of(2025, 10, 28), LocalTime.of(10, 0), ZoneOffset.UTC)
+                .toInstant(),
+            ZonedDateTime.of(LocalDate.of(2025, 11, 10), LocalTime.of(16, 5), ZoneOffset.UTC)
+                .toInstant()));
   }
 
   /**
@@ -240,5 +243,104 @@ public class BestTradingCalculatorPositiveTest {
     assertEquals(0, result.buyPrice());
     assertEquals(0, result.sellPrice());
     assertEquals(calculationDate, result.calculationDate());
+  }
+
+  /**
+   * Simple monotonic increasing scenario over one trading week (Monday to Friday).
+   *
+   * <p>The lowest price is on Monday, and prices increase every day until Friday, which has the
+   * highest price. The best trade must be: buy on Monday, sell on Friday.
+   */
+  @Test
+  void shouldPickMondayToFridayInMonotonicIncreasingWeek() {
+    // Prices strictly increasing across the 5 trading days
+    List<Double> lowPrices = List.of(10.0, 11.0, 12.0, 13.0, 14.0);
+    List<String> lowTimes = List.of("10:00", "10:00", "10:00", "10:00", "10:00");
+
+    List<Double> highPrices = List.of(11.0, 12.0, 13.0, 14.0, 15.0);
+    List<String> highTimes = List.of("15:00", "15:00", "15:00", "15:00", "15:00");
+
+    // Monday; the 5 trading days are Mon–Fri of the previous week:
+    // 0 -> 2025-11-03 (Mon)
+    // 1 -> 2025-11-04 (Tue)
+    // 2 -> 2025-11-05 (Wed)
+    // 3 -> 2025-11-06 (Thu)
+    // 4 -> 2025-11-07 (Fri)
+    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
+
+    BestTradingCalculator calculator = new BestTradingCalculator();
+    BestTradingResult result =
+        calculator.calculateBestTradingResult(
+            lowPrices, lowTimes, highPrices, highTimes, calculationDate);
+
+    // Best is: buy at 10 on Monday, sell at 15 on Friday
+    assertEquals(5, result.maxProfit());
+    assertEquals(0, result.buyDay());
+    assertEquals(4, result.sellDay());
+    assertEquals(10, result.buyPrice());
+    assertEquals(15, result.sellPrice());
+    assertEquals(calculationDate, result.calculationDate());
+
+    Instant expectedBuyTime =
+        ZonedDateTime.of(LocalDate.of(2025, 11, 3), LocalTime.of(10, 0), ZoneOffset.UTC)
+            .toInstant();
+    Instant expectedSellTime =
+        ZonedDateTime.of(LocalDate.of(2025, 11, 7), LocalTime.of(15, 0), ZoneOffset.UTC)
+            .toInstant();
+
+    assertEquals(expectedBuyTime, result.buyTime());
+    assertEquals(expectedSellTime, result.sellTime());
+  }
+
+  /**
+   * Scenario where the best trade is clearly buying on Monday for 1 and selling on Wednesday for 7,
+   * even though there are other later days with positive (but smaller) profit.
+   *
+   * <p>Prices (low = high for simplicity):
+   *
+   * <ul>
+   *   <li>Mon = 1
+   *   <li>Tue = 2
+   *   <li>Wed = 7
+   *   <li>Thu = 3
+   *   <li>Fri = 5
+   * </ul>
+   *
+   * The best trade is: buy Monday (1), sell Wednesday (7) with profit 6.
+   */
+  @Test
+  void shouldPickMondayToWednesdayWhenWednesdayHasHighestPrice() {
+    // Using identical low/high so daily price is effectively a single "cost".
+    List<Double> lowPrices = List.of(1.0, 2.0, 7.0, 3.0, 5.0);
+    List<String> lowTimes = List.of("10:00", "10:00", "10:00", "10:00", "10:00");
+
+    List<Double> highPrices = List.of(1.0, 2.0, 7.0, 3.0, 5.0);
+    List<String> highTimes = List.of("15:00", "15:00", "15:00", "15:00", "15:00");
+
+    // Same mapping of indices to dates as in the previous test.
+    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
+
+    BestTradingCalculator calculator = new BestTradingCalculator();
+    BestTradingResult result =
+        calculator.calculateBestTradingResult(
+            lowPrices, lowTimes, highPrices, highTimes, calculationDate);
+
+    // Best is: buy at 1 on Monday (index 0), sell at 7 on Wednesday (index 2)
+    assertEquals(6, result.maxProfit());
+    assertEquals(0, result.buyDay());
+    assertEquals(2, result.sellDay());
+    assertEquals(1, result.buyPrice());
+    assertEquals(7, result.sellPrice());
+    assertEquals(calculationDate, result.calculationDate());
+
+    Instant expectedBuyTime =
+        ZonedDateTime.of(LocalDate.of(2025, 11, 3), LocalTime.of(10, 0), ZoneOffset.UTC)
+            .toInstant(); // Monday
+    Instant expectedSellTime =
+        ZonedDateTime.of(LocalDate.of(2025, 11, 5), LocalTime.of(15, 0), ZoneOffset.UTC)
+            .toInstant(); // Wednesday
+
+    assertEquals(expectedBuyTime, result.buyTime());
+    assertEquals(expectedSellTime, result.sellTime());
   }
 }
