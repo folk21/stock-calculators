@@ -1,4 +1,4 @@
-package com.stockcalculators.besttrading;
+package com.stockcalculators.besttrading.model;
 
 import com.stockcalculators.util.DateTimeUtils;
 import java.time.Instant;

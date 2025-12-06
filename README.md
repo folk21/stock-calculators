@@ -213,7 +213,7 @@ Minimal snippet (for illustration only):
 
 ```java
 import com.stockcalculators.besttrading.BestTradingCalculator;
-import com.stockcalculators.besttrading.BestTradingResult;
+import com.stockcalculators.besttrading.model.BestTradingResult;
 
 import java.time.LocalDate;
 import java.util.List;

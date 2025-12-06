@@ -1,5 +1,7 @@
 package com.stockcalculators.besttrading;
 
+import com.stockcalculators.besttrading.model.BestTradeState;
+import com.stockcalculators.besttrading.model.TimeSeriesData;
 import com.stockcalculators.util.DateTimeUtils;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -7,17 +9,12 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
-import lombok.experimental.UtilityClass;
 
 /**
- * Internal helper for {@link BestTradingCalculator} that performs the actual calculation of the
- * best single buy/sell transaction.
- *
- * <p>The class is intentionally package-private and should not be used from outside the {@code
- * com.stockcalculators.besttrading} package.
+ * Internal helper for {@link BestTradingCalculator} that contains methods utilized by {@link
+ * BestTradingCalculator#calculateBestTradingResult(List, List, List, List, LocalDate)}
  */
-@UtilityClass
-class BestTradingUtils {
+class BestTradingCalculatorDelegate {
 
   /** Validates the basic preconditions for the calculation. */
   static void validateInputs(
@@ -48,33 +45,38 @@ class BestTradingUtils {
       final LocalDate calculationDate,
       final int numberOfTradingDays) {
 
+    // Find the last trading day before the calculation date (skipping weekends)
     LocalDate lastTradingDate = DateTimeUtils.findLastTradingDateBefore(calculationDate);
+
+    // Build array of trading dates walking backwards from the last trading date
     LocalDate[] tradingDates =
         DateTimeUtils.buildTradingDates(lastTradingDate, numberOfTradingDays);
 
+    // Initialize arrays to hold parsed times and UTC instants for each trading day
     LocalTime[] lowLocalTimes = new LocalTime[numberOfTradingDays];
     LocalTime[] highLocalTimes = new LocalTime[numberOfTradingDays];
     Instant[] lowInstants = new Instant[numberOfTradingDays];
     Instant[] highInstants = new Instant[numberOfTradingDays];
 
-    for (int tradingDayIndex = 0; tradingDayIndex < numberOfTradingDays; tradingDayIndex++) {
-      LocalTime lowTime =
-          DateTimeUtils.parseTime(lowTimes.get(tradingDayIndex), "lowTimes", tradingDayIndex);
-      LocalTime highTime =
-          DateTimeUtils.parseTime(highTimes.get(tradingDayIndex), "highTimes", tradingDayIndex);
+    for (int i = 0; i < numberOfTradingDays; i++) {
+      // Parse time strings (HH:mm format) into LocalTime objects
+      LocalTime lowTime = DateTimeUtils.parseTime(lowTimes.get(i), "lowTimes", i);
+      LocalTime highTime = DateTimeUtils.parseTime(highTimes.get(i), "highTimes", i);
 
-      lowLocalTimes[tradingDayIndex] = lowTime;
-      highLocalTimes[tradingDayIndex] = highTime;
+      // Store parsed times in arrays
+      lowLocalTimes[i] = lowTime;
+      highLocalTimes[i] = highTime;
 
-      ZonedDateTime lowZonedDateTime =
-          DateTimeUtils.toUtcZonedDateTime(tradingDates[tradingDayIndex], lowTime);
-      ZonedDateTime highZonedDateTime =
-          DateTimeUtils.toUtcZonedDateTime(tradingDates[tradingDayIndex], highTime);
+      // Combine trading date with time to create UTC ZonedDateTime
+      ZonedDateTime lowZonedDateTime = DateTimeUtils.toUtcZonedDateTime(tradingDates[i], lowTime);
+      ZonedDateTime highZonedDateTime = DateTimeUtils.toUtcZonedDateTime(tradingDates[i], highTime);
 
-      lowInstants[tradingDayIndex] = lowZonedDateTime.toInstant();
-      highInstants[tradingDayIndex] = highZonedDateTime.toInstant();
+      // Convert to Instant for precise timestamp comparisons
+      lowInstants[i] = lowZonedDateTime.toInstant();
+      highInstants[i] = highZonedDateTime.toInstant();
     }
 
+    // Return immutable record containing all time series data
     return new TimeSeriesData(
         tradingDates, lowLocalTimes, highLocalTimes, lowInstants, highInstants);
   }
@@ -89,10 +91,13 @@ class BestTradingUtils {
       final TimeSeriesData timeSeriesData) {
 
     int numberOfTradingDays = lowPrices.size();
+
+    // Cross-day trades require at least 2 days (buy on one, sell on another)
     if (numberOfTradingDays <= 1) {
       return BestTradeState.empty();
     }
 
+    // Initialize variables to track the best trade found so far
     double bestProfit = 0.0;
     int bestBuyDay = -1;
     int bestSellDay = -1;
@@ -101,22 +106,28 @@ class BestTradingUtils {
     Instant bestBuyTime = null;
     Instant bestSellTime = null;
 
+    // Track the minimum low price seen so far and which day it occurred
     double minimumLowPriceSoFar = lowPrices.get(0);
     int dayOfMinimumLowPrice = 0;
 
+    // Start from day 1 since we need to buy before we sell
     for (int sellDayIndex = 1; sellDayIndex < numberOfTradingDays; sellDayIndex++) {
+
+      // Calculate profit if we sell today at the high price and bought at the minimum low so far
       double potentialProfit = highPrices.get(sellDayIndex) - minimumLowPriceSoFar;
 
+      // Update best trade if this profit is better than what we've seen
       if (potentialProfit > bestProfit) {
         bestProfit = potentialProfit;
         bestBuyDay = dayOfMinimumLowPrice;
         bestSellDay = sellDayIndex;
         bestBuyPrice = minimumLowPriceSoFar;
         bestSellPrice = highPrices.get(sellDayIndex);
-        bestBuyTime = timeSeriesData.lowInstants[dayOfMinimumLowPrice];
-        bestSellTime = timeSeriesData.highInstants[sellDayIndex];
+        bestBuyTime = timeSeriesData.lowInstants()[dayOfMinimumLowPrice];
+        bestSellTime = timeSeriesData.highInstants()[sellDayIndex];
       }
 
+      // Update minimum price tracking for future sell days
       double currentLowPrice = lowPrices.get(sellDayIndex);
       if (currentLowPrice < minimumLowPriceSoFar) {
         minimumLowPriceSoFar = currentLowPrice;
@@ -124,10 +135,12 @@ class BestTradingUtils {
       }
     }
 
+    // Return empty state if no profitable trade was found
     if (bestBuyDay < 0 || bestProfit <= 0.0) {
       return BestTradeState.empty();
     }
 
+    // Return the best cross-day trade found
     return new BestTradeState(
         bestProfit,
         bestBuyDay,
@@ -151,119 +164,32 @@ class BestTradingUtils {
 
     int numberOfTradingDays = lowPrices.size();
 
+    // Check each trading day for potential same-day trades
     for (int tradingDayIndex = 0; tradingDayIndex < numberOfTradingDays; tradingDayIndex++) {
-      LocalTime lowTime = timeSeriesData.lowLocalTimes[tradingDayIndex];
-      LocalTime highTime = timeSeriesData.highLocalTimes[tradingDayIndex];
 
-      // If high happened before or at the same time as the low, same-day trade is not allowed.
+      // Get the low and high times for this trading day
+      LocalTime lowTime = timeSeriesData.lowLocalTimes()[tradingDayIndex];
+      LocalTime highTime = timeSeriesData.highLocalTimes()[tradingDayIndex];
+
+      // Skip this day if high occurred before or at same time as low (invalid same-day trade)
       if (!lowTime.isBefore(highTime)) {
         continue;
       }
 
+      // Calculate profit for buying at low and selling at high on the same day
       double potentialProfit = highPrices.get(tradingDayIndex) - lowPrices.get(tradingDayIndex);
-      if (potentialProfit > currentBestTrade.bestProfit) {
+
+      // Update the best trade if this same-day profit beats the current best
+      if (potentialProfit > currentBestTrade.getBestProfit()) {
         currentBestTrade.updateTrade(
             potentialProfit,
             tradingDayIndex,
             tradingDayIndex,
             lowPrices.get(tradingDayIndex),
             highPrices.get(tradingDayIndex),
-            timeSeriesData.lowInstants[tradingDayIndex],
-            timeSeriesData.highInstants[tradingDayIndex]);
+            timeSeriesData.lowInstants()[tradingDayIndex],
+            timeSeriesData.highInstants()[tradingDayIndex]);
       }
-    }
-  }
-
-  /** Small immutable holder for all date/time related arrays in the time series. */
-  static final class TimeSeriesData {
-
-    private final LocalDate[] tradingDates;
-    private final LocalTime[] lowLocalTimes;
-    private final LocalTime[] highLocalTimes;
-    private final Instant[] lowInstants;
-    private final Instant[] highInstants;
-
-    private TimeSeriesData(
-        LocalDate[] tradingDates,
-        LocalTime[] lowLocalTimes,
-        LocalTime[] highLocalTimes,
-        Instant[] lowInstants,
-        Instant[] highInstants) {
-      this.tradingDates = tradingDates;
-      this.lowLocalTimes = lowLocalTimes;
-      this.highLocalTimes = highLocalTimes;
-      this.lowInstants = lowInstants;
-      this.highInstants = highInstants;
-    }
-  }
-
-  /** Internal state holder for the best trade found so far. */
-  static final class BestTradeState {
-
-    private double bestProfit;
-    private int bestBuyDay;
-    private int bestSellDay;
-    private double bestBuyPrice;
-    private double bestSellPrice;
-    private Instant bestBuyTime;
-    private Instant bestSellTime;
-
-    private BestTradeState(
-        double bestProfit,
-        int bestBuyDay,
-        int bestSellDay,
-        double bestBuyPrice,
-        double bestSellPrice,
-        Instant bestBuyTime,
-        Instant bestSellTime) {
-      this.bestProfit = bestProfit;
-      this.bestBuyDay = bestBuyDay;
-      this.bestSellDay = bestSellDay;
-      this.bestBuyPrice = bestBuyPrice;
-      this.bestSellPrice = bestSellPrice;
-      this.bestBuyTime = bestBuyTime;
-      this.bestSellTime = bestSellTime;
-    }
-
-    static BestTradeState empty() {
-      return new BestTradeState(0.0, -1, -1, 0.0, 0.0, null, null);
-    }
-
-    boolean hasProfitableTrade() {
-      return bestBuyDay >= 0 && bestProfit > 0.0;
-    }
-
-    void updateTrade(
-        double profit,
-        int buyDay,
-        int sellDay,
-        double buyPrice,
-        double sellPrice,
-        Instant buyTime,
-        Instant sellTime) {
-      this.bestProfit = profit;
-      this.bestBuyDay = buyDay;
-      this.bestSellDay = sellDay;
-      this.bestBuyPrice = buyPrice;
-      this.bestSellPrice = sellPrice;
-      this.bestBuyTime = buyTime;
-      this.bestSellTime = sellTime;
-    }
-
-    BestTradingResult toResult(LocalDate calculationDate) {
-      int maxProfitInt = (int) Math.round(bestProfit);
-      int buyPriceInt = (int) Math.round(bestBuyPrice);
-      int sellPriceInt = (int) Math.round(bestSellPrice);
-
-      return new BestTradingResult(
-          maxProfitInt,
-          bestBuyDay,
-          bestSellDay,
-          buyPriceInt,
-          bestBuyTime,
-          sellPriceInt,
-          bestSellTime,
-          calculationDate);
     }
   }
 }

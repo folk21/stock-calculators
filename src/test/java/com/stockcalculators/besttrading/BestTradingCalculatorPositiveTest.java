@@ -2,6 +2,7 @@ package com.stockcalculators.besttrading;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.stockcalculators.besttrading.model.BestTradingResult;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
