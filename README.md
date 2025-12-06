@@ -185,22 +185,6 @@ public record BestTradingResult(
 )
 ```
 
-Additional helper:
-
-```java
-public static BestTradingResult noTrade(LocalDate calculationDate)
-```
-
-Creates the special “no-trade” result.
-
-#### Pretty printing
-
-The record provides a convenience method:
-
-```java
-String BestTradingResult.toPrettyString()
-```
-
 Typical output:
 
 ```text
@@ -220,24 +204,6 @@ buyDay = -1, sellDay = -1
 buyPrice = 0, sellPrice = 0
 calculationDate = 2025-11-10
 ```
-
-Formatting is delegated to `DateTimeutils`:
-
-- `formatInstant(Instant)` to format timestamps.
-- `formatDayLabel(int)` to produce labels like `Monday`, `Friday next week`, etc.
-
----
-
-### 3. `DateTimeutils` (utilities)
-
-Located in `com.stockcalculator.util` and marked as a Lombok `@UtilityClass`:
-
-- `parseTime(String, String, int)` – parses `HH:mm`, throws `IllegalArgumentException` on error.
-- `findLastTradingDateBefore(LocalDate)` – finds the last Monday–Friday date before a given date.
-- `buildTradingDates(LocalDate, int)` – builds an array of trading dates for the given series length.
-- `formatInstant(Instant)` – renders an `Instant` in `yyyy-MM-dd'T'HH:mm` using UTC.
-- `formatDayLabel(int)` – creates human readable day labels based on 0-based index.
-- `toUtcZonedDateTime(LocalDate, LocalTime)` – produces a UTC `ZonedDateTime`.
 
 ---
 
@@ -277,24 +243,142 @@ public class Demo {
 
 ---
 
-## Tests
+## Behaviour and Test Coverage
 
-The project uses **JUnit 5**.
+This module is driven by tests that double as an executable specification.  
+Below is a high-level overview of what the tests verify.
 
-There are two test classes in `com.stockcalculators.besttrading`:
+---
 
-- `BestTradingCalculatorPositiveTest` – typical and edge-case **valid** inputs where a result
-  should be successfully computed (including no-trade scenarios).
-- `BestTradingCalculatorNegativeTest` – tests for invalid input data
-  (mismatched list sizes, malformed time values, etc.).
+### 1. Trading Logic (Core Behaviour)
 
-Additional positive tests demonstrate how `calculationDate` affects the mapping:
+**Single buy/sell rule**
 
-- **Sunday calculation date** with 10 trading days.
-- **Monday calculation date** with 10 trading days.
-- **Tuesday calculation date** with 10 trading days.
-- **Empty list** (0 trading days) with a Monday calculation date – processed without errors and
-  returning a proper no-trade result.
+- Only one buy and one sell are allowed.
+- Buy must happen **before** sell (either earlier day or earlier time on the same day).
+- If no strictly positive profit is possible, the calculator returns a special *no-trade* result.
+
+**Trading days and dates**
+
+- Input lists represent the last `N` **trading days** (Monday–Friday only) strictly before a given `calculationDate`.
+- The **last element** of each list corresponds to the **last trading day** before `calculationDate`.
+- Calendar dates for each index are derived by walking backwards from `calculationDate`, skipping weekends.
+- Tests cover mapping for different `calculationDate` values:
+  - Monday, Sunday, and Tuesday calculation dates.
+  - Correct mapping of indices to concrete calendar dates and timestamps.
+
+**Best trade selection**
+
+The positive test suite checks that the algorithm correctly finds the best trade in different situations:
+
+- **Monotonic increasing week (Test 1)**  
+  - 5 days (Mon–Fri); prices strictly increase every day.  
+  - Requirement: **buy on Monday at the lowest price, sell on Friday at the highest price**.
+
+- **“Mon–Wed is best” scenario (Test 2)**  
+  - Example prices: Mon = 1, Tue = 2, Wed = 7, Thu = 3, Fri = 5.  
+  - Requirement: best trade is **buy Monday (1) → sell Wednesday (7)**, profit = 6,  
+    even though later days still offer smaller positive profits.
+
+- **Cross-week profitable trade (problem statement example)**  
+  - Best trade spans multiple days across two weeks (e.g., buy on day 1, sell on day 8).  
+  - Requirement: indices, prices, timestamps, and calculated profit match the example.
+
+- **Same-day spike vs. cross-day trade**  
+  - There is a very strong intraday spike where buy and sell happen on the **same day**.  
+  - Requirement: algorithm prefers this same-day trade when its profit is higher than any multi-day trade.
+
+- **Ignoring invalid same-day trades**  
+  - Some days have `highTime <= lowTime` (high before or at the same time as low).  
+  - Requirement:
+    - Such same-day trades are **ignored** as invalid.
+    - Valid **cross-day** trades are still considered and the best one is chosen.
+
+- **Empty input lists**  
+  - No trading days at all.  
+  - Requirement: returns a *no-trade* result (no exception).
+
+---
+
+### 2. No-Trade Scenarios (Non-Profitable Markets)
+
+Tests explicitly cover cases where trading is possible in principle, but **no profitable trade** exists:
+
+- **Strictly decreasing prices**  
+  - Prices fall every day; any buy–sell pair yields non-positive profit.  
+  - Requirement: returns *no-trade*.
+
+- **All prices equal**  
+  - No price movement across days.  
+  - Requirement: returns *no-trade*.
+
+- **Single day with invalid intraday order**  
+  - Only one day, but `highTime` is before `lowTime`.  
+  - Requirement: same-day trade is invalid and there is no other day, so result is *no-trade*.
+
+In all of these, tests assert:
+
+- `maxProfit = 0`
+- `buyDay = -1`, `sellDay = -1`
+- `buyPrice = 0`, `sellPrice = 0`
+- `buyTime = null`, `sellTime = null`
+- `calculationDate` is preserved.
+
+---
+
+### 3. Input Validation and Error Handling
+
+The calculator performs strict validation of the input lists.  
+Tests verify that invalid inputs are rejected with an exception rather than producing a silent or incorrect result.
+
+**List size consistency**
+
+- All four lists (`lowPrices`, `lowTimes`, `highPrices`, `highTimes`) must have the **same size**.
+- Any mismatch (e.g., more prices than times) results in an `IllegalArgumentException`.
+
+**Time format and content**
+
+- Times must be non-blank strings in **`HH:mm`** format with valid hour and minute values.
+- The following examples are explicitly tested and must cause an `IllegalArgumentException`:
+  - `"9:30"` (missing leading zero),
+  - `"25:00"` (hour out of range),
+  - `"aa:bb"` (non-numeric),
+  - `""` (empty string),
+  - `"   "` (whitespace only).
+
+**Null elements in time lists**
+
+- `null` inside a time list is not allowed.  
+- This scenario is tested and must result in a runtime exception.
+
+---
+
+### 4. Result Formatting (`toPrettyString()`)
+
+Tests define the exact contract for `BestTradingResult.toPrettyString()`.
+
+**No-trade formatting**
+
+- For a *no-trade* result, the method returns a fixed multi-line message containing:
+  - `maxProfit = 0`
+  - `buyDay = -1, sellDay = -1`
+  - `buyPrice = 0, sellPrice = 0`
+  - `calculationDate = <date>`
+
+**Profitable trade formatting**
+
+- For a valid profitable trade, the string:
+  - Starts with:  
+    `Best buy is Day X at P_buy → sell Day Y at P_sell`
+  - States `maxProfit` on the next line.
+  - Includes:
+    - Day indices and human-readable day labels (e.g. `Monday`, `Friday next week`),
+    - Prices with two decimal places,
+    - Buy and sell timestamps formatted as `yyyy-MM-dd'T'HH:mm` in UTC.
+  - Ends with the `calculationDate`.
+
+The formatting tests use full string equality, so any change in wording, spacing or line breaks 
+is considered a breaking change to the pretty-print contract.
 
 ---
 
