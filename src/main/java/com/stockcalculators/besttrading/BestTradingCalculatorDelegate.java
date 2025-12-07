@@ -1,5 +1,7 @@
 package com.stockcalculators.besttrading;
 
+import static com.stockcalculators.util.ListUtils.FIRST_INDEX;
+
 import com.stockcalculators.besttrading.model.BestTradeState;
 import com.stockcalculators.besttrading.model.TimeSeriesData;
 import com.stockcalculators.util.DateTimeUtils;
@@ -15,6 +17,9 @@ import java.util.Objects;
  * BestTradingCalculator#calculateBestTradingResult(List, List, List, List, LocalDate)}
  */
 class BestTradingCalculatorDelegate {
+
+  /** Minimum number of trading days required to consider a cross-day trade. */
+  private static final int MIN_DAYS_FOR_CROSS_DAY_TRADE = 2;
 
   /** Validates the basic preconditions for the calculation. */
   static void validateInputs(
@@ -58,7 +63,7 @@ class BestTradingCalculatorDelegate {
     Instant[] lowInstants = new Instant[numberOfTradingDays];
     Instant[] highInstants = new Instant[numberOfTradingDays];
 
-    for (int i = 0; i < numberOfTradingDays; i++) {
+    for (int i = FIRST_INDEX; i < numberOfTradingDays; i++) {
       // Parse time strings (HH:mm format) into LocalTime objects
       LocalTime lowTime = DateTimeUtils.parseTime(lowTimes.get(i), "lowTimes", i);
       LocalTime highTime = DateTimeUtils.parseTime(highTimes.get(i), "highTimes", i);
@@ -93,22 +98,16 @@ class BestTradingCalculatorDelegate {
     int numberOfTradingDays = lowPrices.size();
 
     // Cross-day trades require at least 2 days (buy on one, sell on another)
-    if (numberOfTradingDays <= 1) {
-      return BestTradeState.empty();
+    if (numberOfTradingDays < MIN_DAYS_FOR_CROSS_DAY_TRADE) {
+      return BestTradeState.createEmpty();
     }
 
     // Initialize variables to track the best trade found so far
-    double bestProfit = 0.0;
-    int bestBuyDay = -1;
-    int bestSellDay = -1;
-    double bestBuyPrice = 0.0;
-    double bestSellPrice = 0.0;
-    Instant bestBuyTime = null;
-    Instant bestSellTime = null;
+    BestTradeState bestTradeState = BestTradeState.createEmpty();
 
     // Track the minimum low price seen so far and which day it occurred
-    double minimumLowPriceSoFar = lowPrices.get(0);
-    int dayOfMinimumLowPrice = 0;
+    int dayOfMinimumLowPrice = FIRST_INDEX;
+    double minimumLowPriceSoFar = lowPrices.get(dayOfMinimumLowPrice);
 
     // Start from day 1 since we need to buy before we sell
     for (int sellDayIndex = 1; sellDayIndex < numberOfTradingDays; sellDayIndex++) {
@@ -117,14 +116,15 @@ class BestTradingCalculatorDelegate {
       double potentialProfit = highPrices.get(sellDayIndex) - minimumLowPriceSoFar;
 
       // Update best trade if this profit is better than what we've seen
-      if (potentialProfit > bestProfit) {
-        bestProfit = potentialProfit;
-        bestBuyDay = dayOfMinimumLowPrice;
-        bestSellDay = sellDayIndex;
-        bestBuyPrice = minimumLowPriceSoFar;
-        bestSellPrice = highPrices.get(sellDayIndex);
-        bestBuyTime = timeSeriesData.lowInstants()[dayOfMinimumLowPrice];
-        bestSellTime = timeSeriesData.highInstants()[sellDayIndex];
+      if (potentialProfit > bestTradeState.getBestProfit()) {
+        bestTradeState.updateTrade(
+            potentialProfit,
+            dayOfMinimumLowPrice,
+            sellDayIndex,
+            minimumLowPriceSoFar,
+            highPrices.get(sellDayIndex),
+            timeSeriesData.lowInstants()[dayOfMinimumLowPrice],
+            timeSeriesData.highInstants()[sellDayIndex]);
       }
 
       // Update minimum price tracking for future sell days
@@ -136,19 +136,12 @@ class BestTradingCalculatorDelegate {
     }
 
     // Return empty state if no profitable trade was found
-    if (bestBuyDay < 0 || bestProfit <= 0.0) {
-      return BestTradeState.empty();
+    if (!bestTradeState.hasProfitableTrade()) {
+      return BestTradeState.createEmpty();
     }
 
     // Return the best cross-day trade found
-    return new BestTradeState(
-        bestProfit,
-        bestBuyDay,
-        bestSellDay,
-        bestBuyPrice,
-        bestSellPrice,
-        bestBuyTime,
-        bestSellTime);
+    return bestTradeState;
   }
 
   /**
@@ -165,7 +158,9 @@ class BestTradingCalculatorDelegate {
     int numberOfTradingDays = lowPrices.size();
 
     // Check each trading day for potential same-day trades
-    for (int tradingDayIndex = 0; tradingDayIndex < numberOfTradingDays; tradingDayIndex++) {
+    for (int tradingDayIndex = FIRST_INDEX;
+        tradingDayIndex < numberOfTradingDays;
+        tradingDayIndex++) {
 
       // Get the low and high times for this trading day
       LocalTime lowTime = timeSeriesData.lowLocalTimes()[tradingDayIndex];

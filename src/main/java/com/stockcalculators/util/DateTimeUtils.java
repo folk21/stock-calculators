@@ -13,12 +13,7 @@ import java.time.format.TextStyle;
 import java.util.Locale;
 import lombok.experimental.UtilityClass;
 
-/**
- * Common date and time helper methods used by trading calculators.
- *
- * <p>The methods are intentionally kept stateless and are exposed via the {@link UtilityClass}
- * pattern (static methods only).
- */
+/** Common date and time helper methods used by trading calculators. */
 @UtilityClass
 public class DateTimeUtils {
 

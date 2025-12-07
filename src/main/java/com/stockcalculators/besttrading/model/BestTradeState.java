@@ -33,9 +33,10 @@ public final class BestTradeState {
     this.bestSellTime = bestSellTime;
   }
 
-  public static BestTradeState empty() {
+  public static BestTradeState createEmpty() {
     return new BestTradeState(0.0, -1, -1, 0.0, 0.0, null, null);
   }
+
 
   public boolean hasProfitableTrade() {
     return bestBuyDay >= 0 && bestProfit > 0.0;
