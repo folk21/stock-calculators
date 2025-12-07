@@ -110,7 +110,7 @@ class BestTradingCalculatorDelegate {
     double minimumLowPriceSoFar = lowPrices.get(dayOfMinimumLowPrice);
 
     // Start from day 1 since we need to buy before we sell
-    for (int sellDayIndex = 1; sellDayIndex < numberOfTradingDays; sellDayIndex++) {
+    for (int sellDayIndex = FIRST_INDEX + 1; sellDayIndex < numberOfTradingDays; sellDayIndex++) {
 
       // Calculate profit if we sell today at the high price and bought at the minimum low so far
       double potentialProfit = highPrices.get(sellDayIndex) - minimumLowPriceSoFar;
