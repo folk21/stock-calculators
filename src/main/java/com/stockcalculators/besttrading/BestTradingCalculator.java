@@ -2,7 +2,7 @@ package com.stockcalculators.besttrading;
 
 import static com.stockcalculators.besttrading.BestTradingCalculatorDelegate.buildTimeSeriesData;
 
-import com.stockcalculators.besttrading.BestTradingCalculatorDelegate.BestTradeState;
+import com.stockcalculators.besttrading.BestTradingCalculatorDelegate.BestTradingState;
 import com.stockcalculators.besttrading.BestTradingCalculatorDelegate.TimeSeriesData;
 import java.time.LocalDate;
 import java.util.List;
@@ -61,7 +61,7 @@ public final class BestTradingCalculator {
     // 4. First pass: search for the best cross-day trade.
     //    This step considers all trades where the buy happens on one trading day
     //    and the sell happens on a strictly later trading day.
-    BestTradeState bestTradeState =
+    BestTradingState bestTradingState =
         BestTradingCalculatorDelegate.findBestCrossDayTrade(lowPrices, highPrices, timeSeriesData);
 
     // 5. Second pass: update the best trade with same-day opportunities.
@@ -69,10 +69,10 @@ public final class BestTradingCalculator {
     //    For example, buying at the intraday low and selling at the intraday high
     //    of a single trading day.
     BestTradingCalculatorDelegate.updateWithSameDayTrades(
-        bestTradeState, lowPrices, highPrices, timeSeriesData);
+        bestTradingState, lowPrices, highPrices, timeSeriesData);
 
     // 6. If no positive profit was found
-    if (bestTradeState.hasNoProfitableTrade()) {
+    if (bestTradingState.hasNoProfitableTrade()) {
       // 6.1. After considering both cross-day and same-day trades, we still
       //    haven't found a strictly positive profit.
       return BestTradingResult.noTrade(calculationDate);
@@ -82,6 +82,6 @@ public final class BestTradingCalculator {
     //    - best buy day/time
     //    - best sell day/time
     //    - maximum achievable profit
-    return bestTradeState.toResult(calculationDate);
+    return bestTradingState.toResult(calculationDate);
   }
 }

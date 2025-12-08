@@ -89,7 +89,7 @@ class BestTradingCalculatorDelegate {
    * Finds the best cross-day trade (buy on one day, sell on a strictly later day) using the classic
    * "minimum so far" approach.
    */
-  static BestTradeState findBestCrossDayTrade(
+  static BestTradingState findBestCrossDayTrade(
       final List<Double> lowPrices,
       final List<Double> highPrices,
       final TimeSeriesData timeSeriesData) {
@@ -98,11 +98,11 @@ class BestTradingCalculatorDelegate {
 
     // Cross-day trades require at least 2 days (buy on one, sell on another)
     if (numberOfTradingDays < MIN_DAYS_FOR_CROSS_DAY_TRADE) {
-      return BestTradeState.createEmpty();
+      return BestTradingState.createEmpty();
     }
 
     // Initialize variables to track the best trade found so far
-    BestTradeState bestTradeState = BestTradeState.createEmpty();
+    BestTradingState bestTradingState = BestTradingState.createEmpty();
 
     // Track the minimum low price seen so far and which day it occurred
     int dayOfMinimumLowPrice = FIRST_INDEX;
@@ -115,8 +115,8 @@ class BestTradingCalculatorDelegate {
       double potentialProfit = highPrices.get(sellDayIndex) - minimumLowPriceSoFar;
 
       // Update best trade if this profit is better than what we've seen
-      if (potentialProfit > bestTradeState.getBestProfit()) {
-        bestTradeState.updateTrade(
+      if (potentialProfit > bestTradingState.getBestProfit()) {
+        bestTradingState.updateTrade(
             potentialProfit,
             dayOfMinimumLowPrice,
             sellDayIndex,
@@ -135,12 +135,12 @@ class BestTradingCalculatorDelegate {
     }
 
     // Return empty state if no profitable trade was found
-    if (bestTradeState.hasNoProfitableTrade()) {
-      return BestTradeState.createEmpty();
+    if (bestTradingState.hasNoProfitableTrade()) {
+      return BestTradingState.createEmpty();
     }
 
     // Return the best cross-day trade found
-    return bestTradeState;
+    return bestTradingState;
   }
 
   /**
@@ -149,7 +149,7 @@ class BestTradingCalculatorDelegate {
    * than the high time.
    */
   static void updateWithSameDayTrades(
-      final BestTradeState currentBestTrade,
+      final BestTradingState currentBestTrade,
       final List<Double> lowPrices,
       final List<Double> highPrices,
       final TimeSeriesData timeSeriesData) {
@@ -199,7 +199,7 @@ class BestTradingCalculatorDelegate {
 
   /** Internal state holder for the best trade found so far. */
   @Getter
-  static final class BestTradeState {
+  static final class BestTradingState {
 
     private double bestProfit;
     private int bestBuyDay;
@@ -209,7 +209,7 @@ class BestTradingCalculatorDelegate {
     private Instant bestBuyTime;
     private Instant bestSellTime;
 
-    private BestTradeState(
+    private BestTradingState(
         double bestProfit,
         int bestBuyDay,
         int bestSellDay,
@@ -226,8 +226,8 @@ class BestTradingCalculatorDelegate {
       this.bestSellTime = bestSellTime;
     }
 
-    static BestTradeState createEmpty() {
-      return new BestTradeState(0.0, -1, -1, 0.0, 0.0, null, null);
+    static BestTradingState createEmpty() {
+      return new BestTradingState(0.0, -1, -1, 0.0, 0.0, null, null);
     }
 
     boolean hasProfitableTrade() {
