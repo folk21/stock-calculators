@@ -3,9 +3,9 @@ package com.stockcalculators.besttrading;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.stockcalculators.besttrading.model.BestTradingResult;
 import java.time.Instant;
 import java.time.LocalDate;
+import lombok.val;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BestTradingResult#toPrettyString()}. */
@@ -18,13 +18,13 @@ class BestTradingResultPrettyStringTest {
    */
   @Test
   void shouldFormatNoTradeResult() {
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
+    val calculationDate = LocalDate.of(2025, 11, 10);
 
-    BestTradingResult result = BestTradingResult.noTrade(calculationDate);
+    val result = BestTradingResult.noTrade(calculationDate);
 
-    String pretty = result.toPrettyString();
+    val pretty = result.toPrettyString();
 
-    String expected = """
+    val expected = """
         No profitable trade was found.
         maxProfit = 0
         buyDay = -1, sellDay = -1
@@ -51,26 +51,26 @@ class BestTradingResultPrettyStringTest {
   void shouldFormatProfitableTradeResult() {
     // Example similar to the task description:
     // Best buy is Day 0 at 10 → sell Day 9 at 27
-    int maxProfit = 17;
-    int buyDay = 0;
-    int sellDay = 9;
-    int buyPrice = 10;
-    int sellPrice = 27;
+    val maxProfit = 17;
+    val buyDay = 0;
+    val sellDay = 9;
+    val buyPrice = 10;
+    val sellPrice = 27;
 
     // Timestamps are created as Instants; DateTimeUtils.formatInstant is expected
     // to render them as "yyyy-MM-dd'T'HH:mm" in UTC.
-    Instant buyTime = Instant.parse("2025-10-27T10:00:00Z");
-    Instant sellTime = Instant.parse("2025-11-07T16:05:00Z");
+    val buyTime = Instant.parse("2025-10-27T10:00:00Z");
+    val sellTime = Instant.parse("2025-11-07T16:05:00Z");
 
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
+    val calculationDate = LocalDate.of(2025, 11, 10);
 
-    BestTradingResult result =
+    val result =
         new BestTradingResult(
             maxProfit, buyDay, sellDay, buyPrice, buyTime, sellPrice, sellTime, calculationDate);
 
-    String pretty = result.toPrettyString();
+    val pretty = result.toPrettyString();
 
-    String expected = """
+    val expected = """
         Best buy is Day 0 at 10 → sell Day 9 at 27
         maxProfit = 17
         buyDay = 0 (Monday),  buyPrice = 10.00 at 2025-10-27T10:00

@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import lombok.val;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,7 +30,7 @@ class BestTradingCalculatorInvalidDataTest {
       List<Double> highPrices,
       List<String> highTimes,
       Class<? extends RuntimeException> expectedException) {
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
+    val calculationDate = LocalDate.of(2025, 11, 10);
 
     assertThrows(
         expectedException,

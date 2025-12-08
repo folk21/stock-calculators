@@ -2,9 +2,8 @@ package com.stockcalculators.besttrading;
 
 import static com.stockcalculators.besttrading.BestTradingCalculatorDelegate.buildTimeSeriesData;
 
-import com.stockcalculators.besttrading.model.BestTradeState;
-import com.stockcalculators.besttrading.model.BestTradingResult;
-import com.stockcalculators.besttrading.model.TimeSeriesData;
+import com.stockcalculators.besttrading.BestTradingCalculatorDelegate.BestTradeState;
+import com.stockcalculators.besttrading.BestTradingCalculatorDelegate.TimeSeriesData;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -73,7 +72,7 @@ public final class BestTradingCalculator {
         bestTradeState, lowPrices, highPrices, timeSeriesData);
 
     // 6. If no positive profit was found
-    if (!bestTradeState.hasProfitableTrade()) {
+    if (bestTradeState.hasNoProfitableTrade()) {
       // 6.1. After considering both cross-day and same-day trades, we still
       //    haven't found a strictly positive profit.
       return BestTradingResult.noTrade(calculationDate);

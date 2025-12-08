@@ -2,8 +2,6 @@ package com.stockcalculators.besttrading;
 
 import static com.stockcalculators.util.ListUtils.FIRST_INDEX;
 
-import com.stockcalculators.besttrading.model.BestTradeState;
-import com.stockcalculators.besttrading.model.TimeSeriesData;
 import com.stockcalculators.util.DateTimeUtils;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -11,6 +9,7 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
 
 /**
  * Internal helper for {@link BestTradingCalculator} that contains methods utilized by {@link
@@ -136,7 +135,7 @@ class BestTradingCalculatorDelegate {
     }
 
     // Return empty state if no profitable trade was found
-    if (!bestTradeState.hasProfitableTrade()) {
+    if (bestTradeState.hasNoProfitableTrade()) {
       return BestTradeState.createEmpty();
     }
 
@@ -185,6 +184,91 @@ class BestTradingCalculatorDelegate {
             timeSeriesData.lowInstants()[tradingDayIndex],
             timeSeriesData.highInstants()[tradingDayIndex]);
       }
+    }
+  }
+
+  // ================== HELPER MODELS ================
+
+  /** Small immutable holder for all date/time related arrays in the time series. */
+  static record TimeSeriesData(
+      LocalDate[] tradingDates,
+      LocalTime[] lowLocalTimes,
+      LocalTime[] highLocalTimes,
+      Instant[] lowInstants,
+      Instant[] highInstants) {}
+
+  /** Internal state holder for the best trade found so far. */
+  @Getter
+  static final class BestTradeState {
+
+    private double bestProfit;
+    private int bestBuyDay;
+    private int bestSellDay;
+    private double bestBuyPrice;
+    private double bestSellPrice;
+    private Instant bestBuyTime;
+    private Instant bestSellTime;
+
+    private BestTradeState(
+        double bestProfit,
+        int bestBuyDay,
+        int bestSellDay,
+        double bestBuyPrice,
+        double bestSellPrice,
+        Instant bestBuyTime,
+        Instant bestSellTime) {
+      this.bestProfit = bestProfit;
+      this.bestBuyDay = bestBuyDay;
+      this.bestSellDay = bestSellDay;
+      this.bestBuyPrice = bestBuyPrice;
+      this.bestSellPrice = bestSellPrice;
+      this.bestBuyTime = bestBuyTime;
+      this.bestSellTime = bestSellTime;
+    }
+
+    static BestTradeState createEmpty() {
+      return new BestTradeState(0.0, -1, -1, 0.0, 0.0, null, null);
+    }
+
+    boolean hasProfitableTrade() {
+      return bestBuyDay >= 0 && bestProfit > 0.0;
+    }
+
+    boolean hasNoProfitableTrade() {
+      return !hasProfitableTrade();
+    }
+
+    void updateTrade(
+        double profit,
+        int buyDay,
+        int sellDay,
+        double buyPrice,
+        double sellPrice,
+        Instant buyTime,
+        Instant sellTime) {
+      this.bestProfit = profit;
+      this.bestBuyDay = buyDay;
+      this.bestSellDay = sellDay;
+      this.bestBuyPrice = buyPrice;
+      this.bestSellPrice = sellPrice;
+      this.bestBuyTime = buyTime;
+      this.bestSellTime = sellTime;
+    }
+
+    BestTradingResult toResult(LocalDate calculationDate) {
+      int maxProfitInt = (int) Math.round(bestProfit);
+      int buyPriceInt = (int) Math.round(bestBuyPrice);
+      int sellPriceInt = (int) Math.round(bestSellPrice);
+
+      return new BestTradingResult(
+          maxProfitInt,
+          bestBuyDay,
+          bestSellDay,
+          buyPriceInt,
+          bestBuyTime,
+          sellPriceInt,
+          bestSellTime,
+          calculationDate);
     }
   }
 }

@@ -2,7 +2,6 @@ package com.stockcalculators.besttrading;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.stockcalculators.besttrading.model.BestTradingResult;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -10,6 +9,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Stream;
+import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -29,19 +29,19 @@ public class BestTradingCalculatorPositiveTest {
   @MethodSource("calculationDateScenarios")
   void shouldFindBestTradeForDifferentCalculationDates(
       LocalDate calculationDate, Instant expectedBuyTime, Instant expectedSellTime) {
-    List<Double> lowPrices = List.of(10.0, 12.0, 11.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0);
-    List<String> lowTimes =
+    val lowPrices = List.of(10.0, 12.0, 11.0, 13.0, 15.0, 16.0, 18.0, 19.0, 21.0, 22.0);
+    val lowTimes =
         List.of(
             "10:00", "09:45", "11:10", "09:50", "10:15", "09:55", "10:05", "09:40", "10:00",
             "09:35");
-    List<Double> highPrices = List.of(14.0, 15.0, 16.0, 18.0, 20.0, 21.0, 23.0, 24.0, 26.0, 27.0);
-    List<String> highTimes =
+    val highPrices = List.of(14.0, 15.0, 16.0, 18.0, 20.0, 21.0, 23.0, 24.0, 26.0, 27.0);
+    val highTimes =
         List.of(
             "15:00", "16:00", "14:30", "15:40", "16:10", "15:20", "16:00", "15:10", "15:25",
             "16:05");
 
-    BestTradingCalculator calculator = new BestTradingCalculator();
-    BestTradingResult result =
+    val calculator = new BestTradingCalculator();
+    val result =
         calculator.calculateBestTradingResult(
             lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
@@ -89,22 +89,22 @@ public class BestTradingCalculatorPositiveTest {
    */
   @Test
   void shouldUseSameDaySpikeWhenItIsBetterThanAnyCrossDayTrade() {
-    List<Double> lowPrices = List.of(50.0, 52.0, 48.0, 47.0, 49.0, 46.0, 45.0, 44.0, 43.0, 42.0);
-    List<String> lowTimes =
+    val lowPrices = List.of(50.0, 52.0, 48.0, 47.0, 49.0, 46.0, 45.0, 44.0, 43.0, 42.0);
+    val lowTimes =
         List.of(
             "11:00", "10:20", "11:10", "10:40", "11:30", "10:15", "11:05", "10:50", "11:25",
             "10:45");
-    List<Double> highPrices = List.of(55.0, 58.0, 52.0, 80.0, 60.0, 59.0, 57.0, 56.0, 54.0, 53.0);
-    List<String> highTimes =
+    val highPrices = List.of(55.0, 58.0, 52.0, 80.0, 60.0, 59.0, 57.0, 56.0, 54.0, 53.0);
+    val highTimes =
         List.of(
             "15:20", "15:45", "16:00", "15:10", "15:55", "15:30", "16:05", "15:40", "15:15",
             "16:20");
 
-    LocalDate calculationDate =
+    val calculationDate =
         LocalDate.of(2025, 11, 10); // Monday after the last Friday (2025-11-07)
 
-    BestTradingCalculator calculator = new BestTradingCalculator();
-    BestTradingResult result =
+    val calculator = new BestTradingCalculator();
+    val result =
         calculator.calculateBestTradingResult(
             lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
@@ -115,10 +115,10 @@ public class BestTradingCalculatorPositiveTest {
     assertEquals(80, result.sellPrice());
     assertEquals(calculationDate, result.calculationDate());
 
-    Instant expectedBuyTime =
+    val expectedBuyTime =
         ZonedDateTime.of(LocalDate.of(2025, 10, 30), LocalTime.of(10, 40), ZoneOffset.UTC)
             .toInstant();
-    Instant expectedSellTime =
+    val expectedSellTime =
         ZonedDateTime.of(LocalDate.of(2025, 10, 30), LocalTime.of(15, 10), ZoneOffset.UTC)
             .toInstant();
 
@@ -135,23 +135,23 @@ public class BestTradingCalculatorPositiveTest {
    */
   @Test
   void shouldIgnoreInvalidSameDayAndUseCrossDayTrade() {
-    List<Double> lowPrices = List.of(100.0, 98.0, 99.0, 97.0, 95.0, 96.0, 94.0, 93.0, 92.0, 91.0);
-    List<String> lowTimes =
+    val lowPrices = List.of(100.0, 98.0, 99.0, 97.0, 95.0, 96.0, 94.0, 93.0, 92.0, 91.0);
+    val lowTimes =
         List.of(
             "14:00", "13:30", "12:50", "14:20", "13:45", "14:10", "13:55", "14:05", "13:50",
             "14:15");
-    List<Double> highPrices =
+    val highPrices =
         List.of(120.0, 110.0, 108.0, 115.0, 118.0, 125.0, 130.0, 135.0, 140.0, 150.0);
-    List<String> highTimes =
+    val highTimes =
         List.of(
             "09:30", "10:00", "09:45", "10:15", "10:40", "10:20", "09:50", "10:30", "09:55",
             "10:10");
 
-    LocalDate calculationDate =
+    val calculationDate =
         LocalDate.of(2025, 11, 10); // Monday after the last Friday (2025-11-07)
 
-    BestTradingCalculator calculator = new BestTradingCalculator();
-    BestTradingResult result =
+    val calculator = new BestTradingCalculator();
+    val result =
         calculator.calculateBestTradingResult(
             lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
@@ -162,10 +162,10 @@ public class BestTradingCalculatorPositiveTest {
     assertEquals(150, result.sellPrice());
     assertEquals(calculationDate, result.calculationDate());
 
-    Instant expectedBuyTime =
+    val expectedBuyTime =
         ZonedDateTime.of(LocalDate.of(2025, 11, 6), LocalTime.of(13, 50), ZoneOffset.UTC)
             .toInstant();
-    Instant expectedSellTime =
+    val expectedSellTime =
         ZonedDateTime.of(LocalDate.of(2025, 11, 7), LocalTime.of(10, 10), ZoneOffset.UTC)
             .toInstant();
 
@@ -179,24 +179,24 @@ public class BestTradingCalculatorPositiveTest {
    */
   @Test
   void shouldMatchProblemStatementExample() {
-    List<Double> lowPrices =
+    val lowPrices =
         List.of(100.0, 98.0, 102.0, 104.0, 107.0, 110.0, 108.0, 111.0, 113.0, 112.0);
-    List<String> lowTimes =
+    val lowTimes =
         List.of(
             "10:00", "11:00", "09:30", "10:15", "09:45", "11:20", "09:55", "10:10", "09:40",
             "10:25");
-    List<Double> highPrices =
+    val highPrices =
         List.of(103.0, 105.0, 106.0, 108.0, 112.0, 114.0, 116.0, 117.0, 119.0, 118.0);
-    List<String> highTimes =
+    val highTimes =
         List.of(
             "15:00", "16:00", "14:30", "15:45", "16:10", "15:30", "16:00", "15:00", "15:15",
             "16:30");
 
-    LocalDate calculationDate =
+    val calculationDate =
         LocalDate.of(2025, 11, 10); // Monday after the last Friday (2025-11-07)
 
-    BestTradingCalculator calculator = new BestTradingCalculator();
-    BestTradingResult result =
+    val calculator = new BestTradingCalculator();
+    val result =
         calculator.calculateBestTradingResult(
             lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
@@ -207,10 +207,10 @@ public class BestTradingCalculatorPositiveTest {
     assertEquals(119, result.sellPrice());
     assertEquals(calculationDate, result.calculationDate());
 
-    Instant expectedBuyTime =
+    val expectedBuyTime =
         ZonedDateTime.of(LocalDate.of(2025, 10, 28), LocalTime.of(11, 0), ZoneOffset.UTC)
             .toInstant();
-    Instant expectedSellTime =
+    val expectedSellTime =
         ZonedDateTime.of(LocalDate.of(2025, 11, 6), LocalTime.of(15, 15), ZoneOffset.UTC)
             .toInstant();
 
@@ -226,15 +226,15 @@ public class BestTradingCalculatorPositiveTest {
    */
   @Test
   void shouldReturnNoTradeForEmptyList() {
-    List<Double> lowPrices = List.of();
-    List<String> lowTimes = List.of();
-    List<Double> highPrices = List.of();
-    List<String> highTimes = List.of();
+    val lowPrices = List.<Double>of();
+    val lowTimes = List.<String>of();
+    val highPrices = List.<Double>of();
+    val highTimes = List.<String>of();
 
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10); // Monday
+    val calculationDate = LocalDate.of(2025, 11, 10); // Monday
 
-    BestTradingCalculator calculator = new BestTradingCalculator();
-    BestTradingResult result =
+    val calculator = new BestTradingCalculator();
+    val result =
         calculator.calculateBestTradingResult(
             lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
@@ -255,11 +255,11 @@ public class BestTradingCalculatorPositiveTest {
   @Test
   void shouldPickMondayToFridayInMonotonicIncreasingWeek() {
     // Prices strictly increasing across the 5 trading days
-    List<Double> lowPrices = List.of(10.0, 11.0, 12.0, 13.0, 14.0);
-    List<String> lowTimes = List.of("10:00", "10:00", "10:00", "10:00", "10:00");
+    val lowPrices = List.of(10.0, 11.0, 12.0, 13.0, 14.0);
+    val lowTimes = List.of("10:00", "10:00", "10:00", "10:00", "10:00");
 
-    List<Double> highPrices = List.of(11.0, 12.0, 13.0, 14.0, 15.0);
-    List<String> highTimes = List.of("15:00", "15:00", "15:00", "15:00", "15:00");
+    val highPrices = List.of(11.0, 12.0, 13.0, 14.0, 15.0);
+    val highTimes = List.of("15:00", "15:00", "15:00", "15:00", "15:00");
 
     // Monday; the 5 trading days are Mon–Fri of the previous week:
     // 0 -> 2025-11-03 (Mon)
@@ -267,10 +267,10 @@ public class BestTradingCalculatorPositiveTest {
     // 2 -> 2025-11-05 (Wed)
     // 3 -> 2025-11-06 (Thu)
     // 4 -> 2025-11-07 (Fri)
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
+    val calculationDate = LocalDate.of(2025, 11, 10);
 
-    BestTradingCalculator calculator = new BestTradingCalculator();
-    BestTradingResult result =
+    val calculator = new BestTradingCalculator();
+    val result =
         calculator.calculateBestTradingResult(
             lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
@@ -282,10 +282,10 @@ public class BestTradingCalculatorPositiveTest {
     assertEquals(15, result.sellPrice());
     assertEquals(calculationDate, result.calculationDate());
 
-    Instant expectedBuyTime =
+    val expectedBuyTime =
         ZonedDateTime.of(LocalDate.of(2025, 11, 3), LocalTime.of(10, 0), ZoneOffset.UTC)
             .toInstant();
-    Instant expectedSellTime =
+    val expectedSellTime =
         ZonedDateTime.of(LocalDate.of(2025, 11, 7), LocalTime.of(15, 0), ZoneOffset.UTC)
             .toInstant();
 
@@ -312,17 +312,17 @@ public class BestTradingCalculatorPositiveTest {
   @Test
   void shouldPickMondayToWednesdayWhenWednesdayHasHighestPrice() {
     // Using identical low/high so daily price is effectively a single "cost".
-    List<Double> lowPrices = List.of(1.0, 2.0, 7.0, 3.0, 5.0);
-    List<String> lowTimes = List.of("10:00", "10:00", "10:00", "10:00", "10:00");
+    val lowPrices = List.of(1.0, 2.0, 7.0, 3.0, 5.0);
+    val lowTimes = List.of("10:00", "10:00", "10:00", "10:00", "10:00");
 
-    List<Double> highPrices = List.of(1.0, 2.0, 7.0, 3.0, 5.0);
-    List<String> highTimes = List.of("15:00", "15:00", "15:00", "15:00", "15:00");
+    val highPrices = List.of(1.0, 2.0, 7.0, 3.0, 5.0);
+    val highTimes = List.of("15:00", "15:00", "15:00", "15:00", "15:00");
 
     // Same mapping of indices to dates as in the previous test.
-    LocalDate calculationDate = LocalDate.of(2025, 11, 10);
+    val calculationDate = LocalDate.of(2025, 11, 10);
 
-    BestTradingCalculator calculator = new BestTradingCalculator();
-    BestTradingResult result =
+    val calculator = new BestTradingCalculator();
+    val result =
         calculator.calculateBestTradingResult(
             lowPrices, lowTimes, highPrices, highTimes, calculationDate);
 
@@ -334,10 +334,10 @@ public class BestTradingCalculatorPositiveTest {
     assertEquals(7, result.sellPrice());
     assertEquals(calculationDate, result.calculationDate());
 
-    Instant expectedBuyTime =
+    val expectedBuyTime =
         ZonedDateTime.of(LocalDate.of(2025, 11, 3), LocalTime.of(10, 0), ZoneOffset.UTC)
             .toInstant(); // Monday
-    Instant expectedSellTime =
+    val expectedSellTime =
         ZonedDateTime.of(LocalDate.of(2025, 11, 5), LocalTime.of(15, 0), ZoneOffset.UTC)
             .toInstant(); // Wednesday
 
